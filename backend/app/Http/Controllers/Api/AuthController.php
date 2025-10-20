@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -17,13 +19,13 @@ class AuthController extends Controller
             'phone_number' => 'nullable|string|max:20',
         ]);
         //create the user
-        $user = User:: Create([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone_number' => $validated['phone_number'] ?? null,
         ]);
-        //return the user
+        $user->refresh();
         return response()->json([
             'message' => 'User registered successfully',
             'user' => [
@@ -82,4 +84,5 @@ class AuthController extends Controller
             'message' => 'Logged out successfully',
         ], 200);
     }
+    
 }
