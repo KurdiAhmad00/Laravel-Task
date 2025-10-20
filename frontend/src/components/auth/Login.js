@@ -33,8 +33,9 @@ const Login = ({ onLogin, onSwitchToRegister, initialEmail = '' }) => {
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       
-      // Call parent callback
+      // Call parent callback and go to dashboard
       onLogin(user);
+      navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {

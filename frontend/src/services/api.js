@@ -78,12 +78,16 @@ export const incidentAPI = {
 export const adminAPI = {
   getUsers: () => api.get('/users'),
   updateUserRole: (userId, role) => api.put(`/users/${userId}/role`, { role }),
-  getCategories: () => api.get('/categories'),
   createCategory: (categoryData) => api.post('/categories', categoryData),
   updateCategory: (id, data) => api.put(`/categories/${id}`, data),
   deleteCategory: (id) => api.delete(`/categories/${id}`),
   getAuditLogs: () => api.get('/audit-logs'),
   getIncidentAuditLogs: (incidentId) => api.get(`/audit-logs/${incidentId}`),
+};
+
+// Get Categories API calls
+export const categoriesAPI = {
+  getAll: () => api.get('/categories'), 
 };
 
 export default api;

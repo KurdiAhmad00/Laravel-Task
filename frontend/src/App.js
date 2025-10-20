@@ -37,20 +37,9 @@ function App() {
   };
 
   const handleRegistered = (email) => {
-    // After successful registration, return to login with email prefilled
     setPrefillEmail(email || '');
     setShowRegister(false);
   };
-
-  if (user) {
-    return (
-      <div className="container mt-5">
-        <h1>Welcome, {user.name}!</h1>
-        <p>Role: {user.role}</p>
-        <button onClick={handleLogout} className="btn btn-danger">Logout</button>
-      </div>
-    );
-  }
 
   return (
     <BrowserRouter>

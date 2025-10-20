@@ -11,7 +11,8 @@ class CategorySeeder extends Seeder
      * Run the database seeds.
      */
     public function run(): void
-    {
+    { 
+        
         $categories = [
             [
                 'name' => 'Street Lighting',
@@ -41,7 +42,10 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            \App\Models\Category::create($category);
+            \App\Models\Category::updateOrCreate(
+                ['name' => $category['name']],
+                ['description' => $category['description'], 'is_active' => $category['is_active']]
+            );
         }
     }
 }

@@ -1,0 +1,89 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 640px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  border: 1px solid #E5E7EB;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.modal-title { 
+    margin: 0; 
+    font-size: 18px; 
+    font-weight: 700; 
+    color: #374151; }
+.modal-close { 
+    background: none; border: none; font-size: 22px; cursor: pointer; 
+    font-weight: 600; 
+    color: #374151; }
+
+.modal-body { padding: 16px 20px; }
+
+.form-row { 
+    display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; 
+    font-weight: 600; }
+.form-row.grid-2 { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 14px; 
+    font-weight: 600; }
+.form-row input, .form-row textarea, .form-row select {
+  padding: 10px 12px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.form-row select { 
+    background-color: #ffffff; 
+    font-weight: 300; 
+    color: #374151; }
+.form-row textarea { 
+    resize: none; 
+    font-weight: 300; }
+.req { 
+    color: #ef4444; 
+    margin-left: 4px; 
+    font-weight: 300; }
+
+.modal-footer { 
+    display: flex;
+    justify-content: flex-end; 
+    gap: 10px; 
+    margin-top: 6px; 
+    padding: 10px 14px; }
+.btn-secondary { 
+    padding: 10px 14px; 
+    border-radius: 8px; 
+    border: 1px solid #E5E7EB; 
+    background: #F9FAFB; 
+    color: #374151; 
+    font-weight: 600; }
+.btn-primary { 
+    padding: 10px 14px; 
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    color: #fff; 
+    font-weight: 600; }
+.btn-primary:hover { 
+    background: linear-gradient(135deg, #5a67d8 0%, #c7c0da 100%); 
+    color: #fff; }

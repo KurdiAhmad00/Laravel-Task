@@ -9,6 +9,7 @@ use App\Models\IncidentNote;
 use App\Models\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Category;
 
 class IncidentController extends Controller
 {
@@ -314,4 +315,12 @@ class IncidentController extends Controller
         ], 200);
 
     }
+ 
+    public function getCategories()
+    {
+    return Category::query()
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get(['id','name']);
     }
+}

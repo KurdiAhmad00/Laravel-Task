@@ -12,6 +12,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('categories', [IncidentController::class, 'getCategories']);
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);
@@ -52,7 +53,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/users/{user}/role', [AdminController::class, 'updateRole']);
         
         // Category management
-        Route::get('/categories', [AdminController::class, 'getCategories']);
         Route::post('/categories', [AdminController::class, 'createCategory']);
         Route::put('/categories/{category}', [AdminController::class, 'updateCategory']);
         Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory']);
