@@ -58,6 +58,11 @@ class User extends Authenticatable
         return $this->hasMany(Incident::class, 'citizen_id');
     }
 
+    public function incidents()
+    {
+        return $this->reportedIncidents();
+    }
+
     public function assignedIncidents()
     {
         return $this->hasMany(Incident::class, 'assigned_agent_id');

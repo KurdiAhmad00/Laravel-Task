@@ -179,16 +179,28 @@ class IncidentController extends Controller
         
         try {
             DB::transaction(function () use ($user) {
-                // Get all incidents for this citizen
                 $incidents = $user->reportedIncidents()->with('attachments')->get();
                 
                 foreach ($incidents as $incident) {
                     foreach ($incident->attachments as $attachment) {
-                        // Delete the file from storage
                         Storage::disk('public')->delete($attachment->storage_key);
-                        // Delete the attachment record
                         $attachment->delete();
                     }
+                    
+                    \App\Models\AuditLog::create([
+                        'incident_id' => $incident->id,
+                        'actor_id' => $user->id,
+                        'action' => 'deleted',
+                        'entity_type' => 'incident',
+                        'entity_id' => $incident->id,
+                        'old_values' => json_encode([
+                            'title' => $incident->title,
+                            'description' => $incident->description,
+                            'status' => $incident->status,
+                            'priority' => $incident->priority
+                        ]),
+                        'new_values' => null
+                    ]);
                     
                     $incident->delete();
                 }
@@ -204,14 +216,10 @@ class IncidentController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Request $request, Incident $incident)
     {
         $user = $request->user();
         
-        // Check if user owns this incident
         if ($incident->citizen_id !== $user->id) {
             return response()->json([
                 'message' => 'You can only delete your own incidents'
@@ -220,15 +228,30 @@ class IncidentController extends Controller
         
         try {
             DB::transaction(function () use ($incident) {
-                // Delete all attachments first
+
                 foreach ($incident->attachments as $attachment) {
-                    // Delete the file from storage
+
                     Storage::disk('public')->delete($attachment->storage_key);
-                    // Delete the attachment record
+                
+
                     $attachment->delete();
                 }
                 
-                // Now delete the incident
+                \App\Models\AuditLog::create([
+                    'incident_id' => $incident->id,
+                    'actor_id' => $user->id,
+                    'action' => 'deleted',
+                    'entity_type' => 'incident',
+                    'entity_id' => $incident->id,
+                    'old_values' => json_encode([
+                        'title' => $incident->title,
+                        'description' => $incident->description,
+                        'status' => $incident->status,
+                        'priority' => $incident->priority
+                    ]),
+                    'new_values' => null
+                ]);
+                
                 $incident->delete();
             });
             
@@ -242,9 +265,6 @@ class IncidentController extends Controller
         }
     }
 
-    /**
-     * Assign incident to an agent (operators/admins only)
-     */
     public function assign(Request $request, Incident $incident)
     {
         $user = $request->user();
@@ -260,7 +280,7 @@ class IncidentController extends Controller
                 ], 400);
             }
 
-            // Store old values for audit log
+
             $oldAgentId = $incident->assigned_agent_id;
             $oldStatus = $incident->status;
 
@@ -269,7 +289,7 @@ class IncidentController extends Controller
                 'status' => 'Assigned'
             ]);
 
-            // Create audit log for assignment
+
             AuditLog::create([
                 'incident_id' => $incident->id,
                 'actor_id' => $user->id,
@@ -286,17 +306,17 @@ class IncidentController extends Controller
 
             $message = 'Incident assigned successfully';
         } else {
-            // Store old values for audit log
+
             $oldAgentId = $incident->assigned_agent_id;
             $oldStatus = $incident->status;
 
-            // Unassign incident
+
             $incident->update([
                 'assigned_agent_id' => null,
                 'status' => 'New'
             ]);
 
-            // Create audit log for unassignment
+
             AuditLog::create([
                 'incident_id' => $incident->id,
                 'actor_id' => $user->id,
@@ -327,12 +347,12 @@ class IncidentController extends Controller
             'priority' => 'required|in:Low,Medium,High'
         ]);
 
-        // Store old value for audit log
+
         $oldPriority = $incident->priority;
 
         $incident->update(['priority' => $validated['priority']]);
 
-        // Create audit log for priority change
+
         AuditLog::create([
             'incident_id' => $incident->id,
             'actor_id' => $user->id,
@@ -347,9 +367,7 @@ class IncidentController extends Controller
         ], 200);
     }
 
-    /**
-     * Agent: list assigned incidents
-     */
+    
     public function assignedIncidents(Request $request)
     {
         $user = $request->user();
@@ -374,9 +392,7 @@ class IncidentController extends Controller
         ], 200);
     }
 
-    /**
-     * Agent: update incident status
-     */
+    
     public function updateStatus(Request $request, Incident $incident)
     {
         $user = $request->user();
@@ -391,7 +407,7 @@ class IncidentController extends Controller
             'status' => 'required|string'
         ]);
 
-        // Custom validation for status values
+
         $allowedStatuses = ['In Progress', 'Resolved', 'Unresolved'];
         if (!in_array($validated['status'], $allowedStatuses)) {
             return response()->json([
@@ -402,7 +418,7 @@ class IncidentController extends Controller
             ], 422);
         }
 
-        // Store old values for audit log
+
         $oldStatus = $incident->status;
         
         $incident->update([
@@ -410,7 +426,7 @@ class IncidentController extends Controller
             'resolved_at' => in_array($validated['status'], ['Resolved']) ? now() : null,
         ]);
 
-        // Create audit log for status change
+
         AuditLog::create([
             'incident_id' => $incident->id,
             'actor_id' => $user->id,
@@ -425,9 +441,7 @@ class IncidentController extends Controller
         ], 200);
     }
 
-    /**
-     * Agent: add a progress note
-     */
+
     public function addNote(Request $request, Incident $incident)
     {
         $user = $request->user();
@@ -448,7 +462,7 @@ class IncidentController extends Controller
             'body' => $validated['body'],
         ]);
 
-        // Create audit log for note addition
+
         AuditLog::create([
             'incident_id' => $incident->id,
             'actor_id' => $user->id,
@@ -467,7 +481,7 @@ class IncidentController extends Controller
     {
         $user = $request->user();
         
-        // Check if user owns this incident (citizens) or is assigned agent
+
         if ($incident->citizen_id !== $user->id && $incident->assigned_agent_id !== $user->id) {
             return response()->json([
                 'message' => 'You can only upload attachments to your own incidents or assigned incidents'
@@ -490,7 +504,7 @@ class IncidentController extends Controller
             'storage_key' => $path,
         ]);
 
-        // Create audit log for attachment upload
+
         AuditLog::create([
             'incident_id' => $incident->id,
             'actor_id' => $user->id,
@@ -505,9 +519,7 @@ class IncidentController extends Controller
         ], 201);
     }
 
-    /**
-     * Get incident attachments
-     */
+    
     public function getAttachments(Incident $incident)
     {
         $attachments = $incident->attachments()->get();
@@ -524,7 +536,7 @@ class IncidentController extends Controller
                 'message' => 'You can only delete your own attachments'
             ], 403);
         }
-        // Store attachment info for audit log before deletion
+
         $attachmentName = $attachment->filename;
         $incidentId = $attachment->incident_id;
 
@@ -532,12 +544,14 @@ class IncidentController extends Controller
 
         $attachment->delete();
 
-        // Create audit log for attachment deletion
+
         AuditLog::create([
             'incident_id' => $incidentId,
             'actor_id' => $user->id,
-            'action' => 'attachment_removed',
-            'old_values' => json_encode(['attachment' => $attachmentName]),
+            'action' => 'deleted',
+            'entity_type' => 'attachment',
+            'entity_id' => $attachment->id,
+            'old_values' => json_encode(['filename' => $attachmentName]),
             'new_values' => null
         ]);
 
@@ -555,9 +569,7 @@ class IncidentController extends Controller
         ->get(['id','name']);
     }
 
-    /**
-     * Download an attachment
-     */
+    
     public function downloadAttachment(Request $request, Attachment $attachment)
     {
         $user = $request->user();

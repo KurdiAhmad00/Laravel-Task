@@ -10,6 +10,8 @@ class AuditLog extends Model
         'incident_id',
         'actor_id',
         'action',
+        'entity_type',
+        'entity_id',
         'old_values',
         'new_values',
     ];

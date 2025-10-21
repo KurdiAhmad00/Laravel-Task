@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { adminAPI } from '../../../services/api';
 import './Configuration.css';
 
 const Configuration = () => {
@@ -29,6 +30,73 @@ const Configuration = () => {
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  
+  // Category management state
+  const [categories, setCategories] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [editingCategory, setEditingCategory] = useState(null);
+
+  // Load categories on component mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    setCategoryLoading(true);
+    try {
+      const { data } = await adminAPI.getCategories();
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  const handleAddCategory = async () => {
+    if (!newCategory.name.trim()) return;
+    
+    setCategoryLoading(true);
+    try {
+      await adminAPI.createCategory(newCategory);
+      setNewCategory({ name: '', description: '' });
+      setShowAddCategory(false);
+      await loadCategories();
+    } catch (error) {
+      console.error('Error adding category:', error);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  const handleUpdateCategory = async (categoryId, updatedData) => {
+    setCategoryLoading(true);
+    try {
+      await adminAPI.updateCategory(categoryId, updatedData);
+      setEditingCategory(null);
+      await loadCategories();
+    } catch (error) {
+      console.error('Error updating category:', error);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm('Are you sure you want to delete this category?')) return;
+    
+    setCategoryLoading(true);
+    try {
+      await adminAPI.deleteCategory(categoryId);
+      await loadCategories();
+    } catch (error) {
+      console.error('Error deleting category:', error);
+    } finally {
+      setCategoryLoading(false);
+    }
+  };
 
   const handleConfigChange = (section, key, value) => {
     setConfig(prev => ({
@@ -256,6 +324,135 @@ const Configuration = () => {
                 min="1"
                 max="100"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Category Management */}
+        <div className="config-section">
+          <h3>📂 Incident Categories</h3>
+          <div className="category-management">
+            <div className="category-header">
+              <button 
+                className="add-category-btn"
+                onClick={() => setShowAddCategory(true)}
+                disabled={categoryLoading}
+              >
+                <span className="btn-icon">➕</span>
+                Add Category
+              </button>
+            </div>
+
+            {/* Add Category Form */}
+            {showAddCategory && (
+              <div className="add-category-form">
+                <h4>Add New Category</h4>
+                <div className="form-group">
+                  <label>Category Name</label>
+                  <input
+                    type="text"
+                    value={newCategory.name}
+                    onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter category name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea
+                    value={newCategory.description}
+                    onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Enter category description"
+                    rows="3"
+                  />
+                </div>
+                <div className="form-actions">
+                  <button 
+                    className="save-btn small"
+                    onClick={handleAddCategory}
+                    disabled={categoryLoading || !newCategory.name.trim()}
+                  >
+                    {categoryLoading ? 'Adding...' : 'Add Category'}
+                  </button>
+                  <button 
+                    className="cancel-btn small"
+                    onClick={() => {
+                      setShowAddCategory(false);
+                      setNewCategory({ name: '', description: '' });
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Categories List */}
+            <div className="categories-list">
+              {categoryLoading ? (
+                <div className="loading">Loading categories...</div>
+              ) : categories.length === 0 ? (
+                <div className="no-categories">No categories found</div>
+              ) : (
+                categories.map((category) => (
+                  <div key={category.id} className="category-item">
+                    {editingCategory === category.id ? (
+                      <div className="edit-category-form">
+                        <input
+                          type="text"
+                          defaultValue={category.name}
+                          ref={(input) => {
+                            if (input) input.value = category.name;
+                          }}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              const newName = e.target.value.trim();
+                              if (newName && newName !== category.name) {
+                                handleUpdateCategory(category.id, { name: newName });
+                              } else {
+                                setEditingCategory(null);
+                              }
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const newName = e.target.value.trim();
+                            if (newName && newName !== category.name) {
+                              handleUpdateCategory(category.id, { name: newName });
+                            } else {
+                              setEditingCategory(null);
+                            }
+                          }}
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <div className="category-content">
+                        <div className="category-info">
+                          <h4>{category.name}</h4>
+                          {category.description && (
+                            <p className="category-description">{category.description}</p>
+                          )}
+                        </div>
+                        <div className="category-actions">
+                          <button 
+                            className="edit-btn"
+                            onClick={() => setEditingCategory(category.id)}
+                            title="Edit category"
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            className="delete-btn"
+                            onClick={() => handleDeleteCategory(category.id)}
+                            title="Delete category"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

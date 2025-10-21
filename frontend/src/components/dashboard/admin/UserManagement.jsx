@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../../services/api';
+import DeleteUserModal from './DeleteUserModal';
 import './UserManagement.css';
 
 const UserManagement = () => {
@@ -8,6 +9,9 @@ const UserManagement = () => {
   const [error, setError] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -77,14 +81,71 @@ const UserManagement = () => {
   };
   
   const handleDeleteUser = async (userId) => {
-    try{
+    const user = users.find(u => u.id === userId);
+    setUserToDelete({
+      id: userId,
+      name: user?.name || 'Unknown User',
+      constraints: {
+        incidents: 0,
+        assignedIncidents: 0,
+        auditLogs: 0,
+        attachments: 0,
+        incidentAuditLogs: 0,
+        incidentNotes: 0
+      }
+    });
+    setShowDeleteModal(true);
+    setError('');
+  };
+
+  const handleConfirmDelete = async (userId) => {
+    setDeleteLoading(true);
+    try {
       await adminAPI.deleteUser(userId);
       await loadUsers();
+      setError('');
+      setShowDeleteModal(false);
+      setUserToDelete(null);
     } catch (e) {
-      const errorMessage = e.response?.data?.message || 'Failed to delete user';
-      setError(errorMessage);
-      console.error('Error deleting user:', e);
+      const errorData = e.response?.data;
+      
+      // If user has constraints, update the modal with constraint info
+      if (errorData?.constraints) {
+        setUserToDelete(prev => ({
+          ...prev,
+          constraints: errorData.constraints
+        }));
+        setError('');
+      } else {
+        const errorMessage = errorData?.message || 'Failed to delete user';
+        setError(errorMessage);
+        setShowDeleteModal(false);
+        setUserToDelete(null);
+      }
+    } finally {
+      setDeleteLoading(false);
     }
+  };
+
+  const handleCascadeDelete = async (userId) => {
+    setDeleteLoading(true);
+    try {
+      await adminAPI.deleteUserWithCascade(userId);
+      await loadUsers();
+      setError('');
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    } catch (e) {
+      const errorMessage = e.response?.data?.message || 'Failed to delete user and associated data';
+      setError(errorMessage);
+      console.error('Error cascade deleting user:', e);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (userId) => {
+    handleDeleteUser(userId);
   };
 
   if (loading) {
@@ -169,19 +230,16 @@ const UserManagement = () => {
                   {new Date(user.created_at).toLocaleDateString()}
                 </td>
                 <td>
-                  <span className={`status-badge ${user.email_verified_at ? 'active' : 'inactive'}`}>
-                    {user.email_verified_at ? 'Active' : 'Inactive'}
+                  <span className={`status-badge ${user.status === 'active' ? 'active' : 'inactive'}`}>
+                    {user.status === 'active' ? 'Active' : 'Inactive'}
                   </span>
                 </td>
                 <td className="user-actions">
                   <button 
                     className="action-btn delete"
-                    onClick={() => {
-                      if (window.confirm('Are you sure you want to delete this user?')) {
-                        handleDeleteUser(user.id);
-                      }
-                    }}
+                    onClick={() => handleDeleteClick(user.id)}
                     title="Delete User"
+                    disabled={deleteLoading}
                   >
                     🗑️
                   </button>
@@ -197,6 +255,18 @@ const UserManagement = () => {
           <p>No users found</p>
         </div>
       )}
+
+      <DeleteUserModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setUserToDelete(null);
+        }}
+        user={userToDelete}
+        onConfirmDelete={handleConfirmDelete}
+        onDeleteWithCascade={handleCascadeDelete}
+        loading={deleteLoading}
+      />
     </div>
   );
 };

@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users', [AdminController::class, 'index']);
         Route::put('/users/{user}/role', [AdminController::class, 'updateRole']);
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
+        Route::delete('/users/{user}/cascade', [AdminController::class, 'deleteUserWithCascade']);
         // Category management
         Route::post('/categories', [AdminController::class, 'createCategory']);
         Route::put('/categories/{category}', [AdminController::class, 'updateCategory']);

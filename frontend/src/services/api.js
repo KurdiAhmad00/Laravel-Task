@@ -86,11 +86,15 @@ export const adminAPI = {
   getAllIncidents: () => api.get('/incidents'),
   updateUserRole: (userId, role) => api.put(`/users/${userId}/role`, { role }),
   deleteUser: (userId) => api.delete(`/users/${userId}`),
+  deleteUserWithCascade: (userId) => api.delete(`/users/${userId}/cascade`),
+  getAuditLogs: (page = 1, filters = {}) => api.get('/audit-logs', { 
+    params: { page, ...filters } 
+  }),
+  getIncidentAuditLogs: (incidentId) => api.get(`/audit-logs/${incidentId}`),
+  getCategories: () => api.get('/categories'),
   createCategory: (categoryData) => api.post('/categories', categoryData),
   updateCategory: (id, data) => api.put(`/categories/${id}`, data),
   deleteCategory: (id) => api.delete(`/categories/${id}`),
-  getAuditLogs: () => api.get('/audit-logs'),
-  getIncidentAuditLogs: (incidentId) => api.get(`/audit-logs/${incidentId}`),
 };
 
 // Get Categories API calls
