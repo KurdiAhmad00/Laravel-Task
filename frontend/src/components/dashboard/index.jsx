@@ -1,8 +1,8 @@
 import React from 'react';
 import DashboardLayout from './DashboardLayout';
 import CitizenDashboard from './CitizenDashboard';
-const OperatorDashboard = () => <div>Operator overview</div>;
-const AgentDashboard = () => <div>Agent overview</div>;
+import OperatorDashboard from './OperatorDashboard';
+import AgentDashboard from './AgentDashboard';
 const AdminDashboard = () => <div>Admin overview</div>;
 
 const RoleDashboard = () => {

@@ -8,7 +8,6 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
     title: '',
     description: '',
     category_id: '',
-    priority: 'medium',
     location_lat: '',
     location_lng: '',
   });
@@ -18,12 +17,24 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
 
   useEffect(() => {
     if (!open) return;
+    
+    // Reset form when modal opens
+    setForm({
+      title: '',
+      description: '',
+      category_id: '',
+      location_lat: '',
+      location_lng: '',
+    });
+    setFiles([]);
+    setError('');
+    setSubmitting(false);
+    
     (async () => {
       try {
         const { data } = await categoriesAPI.getAll();
         setCategories(Array.isArray(data) ? data : (data?.data || []));
       } catch (e) {
-        // non-blocking
       }
     })();
   }, [open]);
@@ -45,7 +56,7 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!form.title || !form.description || !form.category_id || !form.priority) {
+    if (!form.title || !form.description || !form.category_id) {
       setError('Please fill all required fields.');
       return;
     }
@@ -55,7 +66,6 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
       formData.append('title', form.title);
       formData.append('description', form.description);
       formData.append('category_id', form.category_id);
-      formData.append('priority', form.priority);
       formData.append('location_lat', form.location_lat === '' ? '' : form.location_lat);
       formData.append('location_lng', form.location_lng === '' ? '' : form.location_lng);
       
@@ -86,7 +96,7 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
         <form className="modal-body" onSubmit={handleSubmit}>
           {error && <div className="alert alert-danger" role="alert">{error}</div>}
 
-          <div className="form-row grid-2">
+          <div className="form-row">
             <div className="select-wrapper">
               <label htmlFor="category_id">Category<span className="req">*</span></label>
               <select id="category_id" name="category_id" value={form.category_id} onChange={handleChange} required>
@@ -94,14 +104,6 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
-              </select>
-            </div>
-            <div className="select-wrapper">
-              <label htmlFor="priority">Priority<span className="req">*</span></label>
-              <select id="priority" name="priority" value={form.priority} onChange={handleChange} required>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
               </select>
             </div>
           </div>

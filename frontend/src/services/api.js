@@ -49,19 +49,21 @@ export const authAPI = {
 // Incident API calls
 export const incidentAPI = {
   // Citizen endpoints
-  getMyIncidents: () => api.get('/my-incidents'),
+  getMyIncidents: (page = 1, perPage = 10) => api.get(`/my-incidents?page=${page}&per_page=${perPage}`),
   createIncident: (incidentData) => api.post('/incidents', incidentData),
   getIncident: (id) => api.get(`/incidents/${id}`),
   updateIncident: (id, data) => api.put(`/incidents/${id}`, data),
   deleteIncident: (id) => api.delete(`/incidents/${id}`),
+  deleteAllIncidents: () => api.delete('/my-incidents'),
   
   // Operator endpoints
-  getAllIncidents: () => api.get('/incidents'),
+  getAllIncidents: (page = 1, perPage = 10) => api.get(`/incidents?page=${page}&per_page=${perPage}`),
+  getIncident: (id) => api.get(`/incidents/${id}`),
   assignIncident: (id, agentId) => api.post(`/incidents/${id}/assign`, { agent_id: agentId }),
   updatePriority: (id, priority) => api.post(`/incidents/${id}/priority`, { priority }),
   
   // Agent endpoints
-  getAssignedIncidents: () => api.get('/assigned-incidents'),
+  getAssignedIncidents: (page = 1, perPage = 10) => api.get(`/assigned-incidents?page=${page}&per_page=${perPage}`),
   updateStatus: (id, status) => api.post(`/incidents/${id}/status`, { status }),
   addNote: (id, note) => api.post(`/incidents/${id}/notes`, { body: note }),
   
@@ -80,6 +82,7 @@ export const incidentAPI = {
 // Admin API calls
 export const adminAPI = {
   getUsers: () => api.get('/users'),
+  getAgents: () => api.get('/agents'),
   updateUserRole: (userId, role) => api.put(`/users/${userId}/role`, { role }),
   createCategory: (categoryData) => api.post('/categories', categoryData),
   updateCategory: (id, data) => api.put(`/categories/${id}`, data),
@@ -90,7 +93,8 @@ export const adminAPI = {
 
 // Get Categories API calls
 export const categoriesAPI = {
-  getAll: () => api.get('/categories'), 
+  getAll: () => api.get('/categories'),
+  getCategories: () => api.get('/categories'), // Alias for consistency
 };
 
 export default api;

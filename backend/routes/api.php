@@ -13,13 +13,14 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('categories', [IncidentController::class, 'getCategories']);
+    Route::get('/incidents/{incident}', [IncidentController::class, 'show']);
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);
         Route::post('/incidents', [IncidentController::class, 'store']);
-        Route::get('/incidents/{incident}', [IncidentController::class, 'show']);
         Route::put('/incidents/{incident}', [IncidentController::class, 'update']);
         Route::delete('/incidents/{incident}', [IncidentController::class, 'destroy']);
+        Route::delete('/my-incidents', [IncidentController::class, 'deleteAll']); 
         
         // File attachments
         Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment']);
@@ -32,6 +33,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/incidents', [IncidentController::class, 'index']);
         Route::post('/incidents/{incident}/assign', [IncidentController::class, 'assign']);
         Route::post('/incidents/{incident}/priority', [IncidentController::class, 'updatePriority']);
+        
+        // Get agents for assignment
+        Route::get('/agents', [AdminController::class, 'getAgents']);
+        
+        // Audit logs for operators
+        Route::get('/audit-logs', [AdminController::class, 'getAuditLogs']);
+        Route::get('/audit-logs/{incident}', [AdminController::class, 'getIncidentAuditLogs']);
     });
     
     // Agent routes 

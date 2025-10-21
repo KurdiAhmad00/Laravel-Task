@@ -144,14 +144,6 @@ const ViewIncidentModal = ({ open, onClose, incidentId }) => {
                         <span className="attachment-size">({(attachment.size_bytes / 1024).toFixed(1)} KB)</span>
                       </div>
                       <div className="attachment-actions">
-                        <a 
-                          href={getStorageUrl(attachment.storage_key)} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="attachment-download"
-                        >
-                          Download
-                        </a>
                         {attachment.content_type?.startsWith('image/') && (
                           <div className="attachment-preview">
                             <img 

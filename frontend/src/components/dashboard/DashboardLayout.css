@@ -35,7 +35,7 @@
 
 .dashboard-card {
   background: #ffffff;
-  border: 1px solid #E5E7EB;
+  border: 5px solid #E5E7EB; /* Default border, will be overridden by inline style */
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   padding: 24px;
@@ -74,7 +74,7 @@
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #10B981;
   color: #ffffff;
   border: none;
   font-weight: 600;
@@ -82,7 +82,7 @@
 }
 .Report-Incident-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.25);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
 }
 .Report-Incident-btn:disabled {
   opacity: 0.7;
@@ -191,5 +191,276 @@
 .delete-modal-delete-btn:disabled {
   background: #9CA3AF;
   cursor: not-allowed;
+}
+
+/* Pagination Styles */
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding: 16px 0;
+  border-top: 1px solid #E5E7EB;
+}
+
+.pagination-info {
+  color: #6B7280;
+  font-size: 14px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-btn {
+  padding: 8px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.pagination-btn:disabled {
+  background: #F9FAFB;
+  color: #9CA3AF;
+  cursor: not-allowed;
+  border-color: #E5E7EB;
+}
+
+.pagination-pages {
+  display: flex;
+  gap: 4px;
+  margin: 0 8px;
+}
+
+.pagination-page {
+  padding: 8px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 40px;
+  text-align: center;
+}
+
+.pagination-page:hover {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.pagination-page.active {
+  background: #3B82F6;
+  color: white;
+  border-color: #3B82F6;
+}
+
+.pagination-page.active:hover {
+  background: #2563EB;
+  border-color: #2563EB;
+}
+
+/* Delete All Button Styles */
+.delete-all-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 16px 0;
+  border-top: 1px solid #E5E7EB;
+}
+
+.delete-all-btn {
+  padding: 12px 24px;
+  border: 1px solid #DC2626;
+  border-radius: 8px;
+  background: white;
+  color: #DC2626;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.delete-all-btn:hover {
+  background: #DC2626;
+  color: white;
+}
+
+/* Welcome Message Styles */
+.welcome-container {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+}
+
+.welcome-message {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.username {
+  font-weight: 700;
+}
+
+/* Logout Button Styles */
+.logout-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
+.logout-btn {
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: #F3F4F6;
+  color: #6B7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logout-btn:hover {
+  background: #EF4444;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Operator Dashboard Styles */
+.filters-container {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #F9FAFB;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+}
+
+.search-input {
+  padding: 8px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+}
+
+.import-btn {
+  padding: 8px 16px;
+  border: 1px solid #3B82F6;
+  border-radius: 6px;
+  background: white;
+  color: #3B82F6;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.import-btn:hover {
+  background: #3B82F6;
+  color: white;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.view-btn {
+  background: #EFF6FF;
+  color: #3B82F6;
+}
+
+.view-btn:hover {
+  background: #3B82F6;
+  color: white;
+}
+
+.assign-btn {
+  background: #FEF3C7;
+  color: #F59E0B;
+}
+
+.assign-btn:hover {
+  background: #F59E0B;
+  color: white;
+}
+
+.priority-btn {
+  background: #FEF2F2;
+  color: #EF4444;
+}
+
+.priority-btn:hover {
+  background: #EF4444;
+  color: white;
+}
+
+.audit-btn {
+  background: #F3F4F6;
+  color: #6B7280;
+}
+
+.audit-btn:hover {
+  background: #6B7280;
+  color: white;
 }
 

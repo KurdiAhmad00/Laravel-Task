@@ -4,7 +4,7 @@ import ReportIncidentModal from '../modals/ReportIncidentModal';
 import ViewIncidentModal from '../modals/ViewIncidentModal';
 import EditIncidentModal from '../modals/EditIncidentModal';
 
-const formatDate = (iso) => new Date(iso).toLocaleString();
+const formatDate = (iso) => new Date(iso).toLocaleDateString();
 
 const StatusBadge = ({ status }) => (
   <span className="status-badge status-badge--indigo">
@@ -29,8 +29,16 @@ const CitizenDashboard = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, incidentId: null });
   const [confirmDelete, setConfirmDelete] = useState({ visible: false, incidentId: null, title: '' });
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState({ visible: false });
   const [editModal, setEditModal] = useState({ visible: false, incidentId: null });
   const [viewModal, setViewModal] = useState({ visible: false, incidentId: null });
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    lastPage: 1,
+    perPage: 10,
+    total: 0,
+    hasMorePages: false
+  });
   
   const handleDeleteClick = (incidentId) => {
     const incident = incidents.find(i => i.id === incidentId);
@@ -48,7 +56,8 @@ const CitizenDashboard = () => {
     setError('');
     try{
       await incidentAPI.deleteIncident(incidentId);
-      setIncidents(prev => prev.filter(i => i.id !== incidentId));
+      // Refresh current page after deletion
+      loadIncidents(pagination.currentPage);
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to delete incident');
     } finally {
@@ -59,6 +68,26 @@ const CitizenDashboard = () => {
 
   const handleDeleteCancel = () => {
     setConfirmDelete({ visible: false, incidentId: null, title: '' });
+  }
+
+  const handleDeleteAllClick = () => {
+    setConfirmDeleteAll({ visible: true });
+  }
+
+  const handleDeleteAllConfirm = async () => {
+    setError('');
+    try {
+      await incidentAPI.deleteAllIncidents();
+      // Refresh the list - go to page 1
+      loadIncidents(1);
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to delete all incidents');
+    }
+    setConfirmDeleteAll({ visible: false });
+  }
+
+  const handleDeleteAllCancel = () => {
+    setConfirmDeleteAll({ visible: false });
   }
   const handleEdit = (incidentId) => {
     if (incidentId && typeof incidentId === 'number') {
@@ -89,28 +118,33 @@ const CitizenDashboard = () => {
     setContextMenu({ visible: false, x: 0, y: 0, incidentId: null });
   }
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const { data } = await incidentAPI.getMyIncidents();
-        const list = Array.isArray(data)
-          ? data
-          : (Array.isArray(data?.incidents) ? data.incidents 
-          : (Array.isArray(data?.data) ? data.data
-          : (Array.isArray(data?.items) ? data.items  
-          : (Array.isArray(data?.citizen) ? data.citizen 
-          : (Array.isArray(data?.results) ? data.results 
-          : [])))));
-
-        if (mounted) setIncidents(list);
-      } catch (e) {
-        setError(e.response?.data?.message || 'Failed to load your incidents');
-      } finally {
-        if (mounted) setLoading(false);
+  const loadIncidents = async (page = 1) => {
+    setLoading(true);
+    setError('');
+    try {
+      const { data } = await incidentAPI.getMyIncidents(page, 10);
+      const list = Array.isArray(data?.incidents) ? data.incidents : [];
+      
+      setIncidents(list);
+      if (data?.pagination) {
+        // Convert snake_case to camelCase
+        setPagination({
+          currentPage: data.pagination.current_page,
+          lastPage: data.pagination.last_page,
+          perPage: data.pagination.per_page,
+          total: data.pagination.total,
+          hasMorePages: data.pagination.has_more_pages
+        });
       }
-    })();
-    return () => { mounted = false; };
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to load your incidents');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadIncidents(1);
   }, []);
 
   useEffect(() => {
@@ -140,19 +174,7 @@ const CitizenDashboard = () => {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onCreated={() => {
-          // refresh list after creation
-          (async () => {
-            try {
-              const { data } = await incidentAPI.getMyIncidents();
-              const list = Array.isArray(data)
-                ? data
-                : (Array.isArray(data?.incidents) ? data.incidents : 
-                (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.items) ? data.items : 
-                (Array.isArray(data?.results) ? data.results : 
-                (Array.isArray(data?.citizen) ? data.citizen : [])))));
-              setIncidents(list);
-            } catch (_) {}
-          })();
+          loadIncidents(1);
         }}
       />
       <EditIncidentModal
@@ -160,19 +182,9 @@ const CitizenDashboard = () => {
           onClose={() => setEditModal({ visible: false, incidentId: null })}
           incidentId={editModal.incidentId}
           onUpdated={() => {
-          (async () => {
-            try {
-                const { data } = await incidentAPI.getMyIncidents();
-                const list = Array.isArray(data)
-                    ? data
-                    : (Array.isArray(data?.incidents) ? data.incidents : 
-                    (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.items) ? data.items : 
-                    (Array.isArray(data?.results) ? data.results : 
-                    (Array.isArray(data?.citizen) ? data.citizen : [])))));
-                    setIncidents(list);
-            } catch (_) {}
-          })();
-        }}
+            // refresh current page after update
+            loadIncidents(pagination.currentPage);
+          }}
         />
 
       <ViewIncidentModal
@@ -230,6 +242,54 @@ const CitizenDashboard = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && !error && pagination.lastPage > 1 && (
+        <div className="pagination-container">
+          <div className="pagination-info">
+            Showing {((pagination.currentPage - 1) * pagination.perPage) + 1} to {Math.min(pagination.currentPage * pagination.perPage, pagination.total)} of {pagination.total} incidents
+          </div>
+          <div className="pagination-controls">
+            <button 
+              className="pagination-btn"
+              onClick={() => loadIncidents(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}
+            >
+              Previous
+            </button>
+            <div className="pagination-pages">
+              {Array.from({ length: pagination.lastPage }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  className={`pagination-page ${page === pagination.currentPage ? 'active' : ''}`}
+                  onClick={() => loadIncidents(page)}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button 
+              className="pagination-btn"
+              onClick={() => loadIncidents(pagination.currentPage + 1)}
+              disabled={!pagination.hasMorePages}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Button */}
+      {!loading && !error && incidents.length > 0 && (
+        <div className="delete-all-container">
+          <button 
+            className="delete-all-btn"
+            onClick={handleDeleteAllClick}
+          >
+            Delete All Incidents
+          </button>
         </div>
       )}
 
@@ -330,6 +390,35 @@ const CitizenDashboard = () => {
                 className="delete-modal-delete-btn"
               >
                 {deletingId === confirmDelete.incidentId ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Modal */}
+      {confirmDeleteAll.visible && (
+        <div className="delete-modal-overlay">
+          <div className="delete-modal-content">
+            <div className="delete-modal-header">
+              <h3>Delete All Incidents</h3>
+            </div>
+            <div className="delete-modal-body">
+              <p>Are you sure you want to delete <strong>ALL</strong> your incidents? This action cannot be undone.</p>
+              <p>This will also delete all attachments associated with these incidents.</p>
+            </div>
+            <div className="delete-modal-actions">
+              <button
+                onClick={handleDeleteAllCancel}
+                className="delete-modal-cancel-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAllConfirm}
+                className="delete-modal-delete-btn"
+              >
+                Delete All
               </button>
             </div>
           </div>

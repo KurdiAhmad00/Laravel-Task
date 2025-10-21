@@ -24,6 +24,21 @@ class AdminController extends Controller
     }
 
     /**
+     * Get all agents (operators and admins can access)
+     */
+    public function getAgents()
+    {
+        $agents = User::select('id', 'name', 'email', 'role')
+            ->where('role', 'agent')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'agents' => $agents
+        ], 200);
+    }
+
+    /**
      * Update user role (admin only)
      */
     public function updateRole(Request $request, User $user)

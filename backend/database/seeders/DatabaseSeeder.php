@@ -14,7 +14,11 @@ class DatabaseSeeder extends Seeder
      * Seed the application's database.
      */
     public function run(): void
-    {        // Ensure categories are seeded
+    {
+        // Ensure categories are seeded
         $this->call(\Database\Seeders\CategorySeeder::class);
+        
+        // Create test users
+        $this->call(\Database\Seeders\TestUsersSeeder::class);
     }
 }

@@ -9,6 +9,7 @@ use App\Models\IncidentNote;
 use App\Models\Attachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use App\Models\Category;
 
 class IncidentController extends Controller
@@ -18,12 +19,22 @@ class IncidentController extends Controller
      */
     public function index(Request $request)
     {
+        $perPage = $request->get('per_page', 10);
+        $page = $request->get('page', 1);
+        
         $incidents = Incident::with(['category', 'citizen', 'assignedAgent', 'attachments'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
-            'incidents' => $incidents
+            'incidents' => $incidents->items(),
+            'pagination' => [
+                'current_page' => $incidents->currentPage(),
+                'last_page' => $incidents->lastPage(),
+                'per_page' => $incidents->perPage(),
+                'total' => $incidents->total(),
+                'has_more_pages' => $incidents->hasMorePages(),
+            ]
         ], 200);
     }
 
@@ -34,13 +45,23 @@ class IncidentController extends Controller
     {
         $user = $request->user();
         
+        $perPage = $request->get('per_page', 10);
+        $page = $request->get('page', 1);
+        
         $incidents = $user->reportedIncidents()
             ->with(['category', 'attachments'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
-            'incidents' => $incidents
+            'incidents' => $incidents->items(),
+            'pagination' => [
+                'current_page' => $incidents->currentPage(),
+                'last_page' => $incidents->lastPage(),
+                'per_page' => $incidents->perPage(),
+                'total' => $incidents->total(),
+                'has_more_pages' => $incidents->hasMorePages(),
+            ]
         ], 200);
     }
 
@@ -53,7 +74,6 @@ class IncidentController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
-            'priority' => 'required|in:low,medium,high',
             'location_lat' => 'nullable|numeric|between:-90,90',
             'location_lng' => 'nullable|numeric|between:-180,180',
             'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf,doc,docx,txt|max:10240', // 10MB max
@@ -68,7 +88,7 @@ class IncidentController extends Controller
             'location_lat' => $validated['location_lat'],
             'location_lng' => $validated['location_lng'],
             'citizen_id' => $user->id,
-            'priority' => ucfirst($validated['priority']),
+            'priority' => 'Low', // Default priority - agents will update this
             'status' => 'New',
         ]);
 
@@ -100,16 +120,28 @@ class IncidentController extends Controller
     public function show(Request $request, Incident $incident)
     {
         $user = $request->user();
+        $userRole = $user->role;
         
-        // Check if user owns this incident
-        if ($incident->citizen_id !== $user->id) {
-            return response()->json([
-                'message' => 'You can only view your own incidents'
-            ], 403);
+        // Check permissions based on user role
+        if ($userRole === 'citizen') {
+            // Citizens can only view their own incidents
+            if ($incident->citizen_id !== $user->id) {
+                return response()->json([
+                    'message' => 'You can only view your own incidents'
+                ], 403);
+            }
+        } elseif ($userRole === 'agent') {
+            // Agents can view incidents assigned to them or their own incidents
+            if ($incident->assigned_agent_id !== $user->id && $incident->citizen_id !== $user->id) {
+                return response()->json([
+                    'message' => 'You can only view incidents assigned to you or your own incidents'
+                ], 403);
+            }
         }
+        // Operators and admins can view any incident (no additional checks)
         
         return response()->json([
-            'incident' => $incident->load(['category', 'attachments'])
+            'incident' => $incident->load(['category', 'citizen', 'assignedAgent', 'attachments'])
         ], 200);
     }
 
@@ -140,6 +172,37 @@ class IncidentController extends Controller
         ], 200);
     }
 
+    public function deleteAll(Request $request)
+    {
+        $user = $request->user();
+        
+        try {
+            DB::transaction(function () use ($user) {
+                // Get all incidents for this citizen
+                $incidents = $user->reportedIncidents()->with('attachments')->get();
+                
+                foreach ($incidents as $incident) {
+                    foreach ($incident->attachments as $attachment) {
+                        // Delete the file from storage
+                        Storage::disk('public')->delete($attachment->storage_key);
+                        // Delete the attachment record
+                        $attachment->delete();
+                    }
+                    
+                    $incident->delete();
+                }
+            });
+            
+            return response()->json([
+                'message' => 'All incidents deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete incidents: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -154,11 +217,28 @@ class IncidentController extends Controller
             ], 403);
         }
         
-        $incident->delete();
-        
-        return response()->json([
-            'message' => 'Incident deleted successfully'
-        ], 200);
+        try {
+            DB::transaction(function () use ($incident) {
+                // Delete all attachments first
+                foreach ($incident->attachments as $attachment) {
+                    // Delete the file from storage
+                    Storage::disk('public')->delete($attachment->storage_key);
+                    // Delete the attachment record
+                    $attachment->delete();
+                }
+                
+                // Now delete the incident
+                $incident->delete();
+            });
+            
+            return response()->json([
+                'message' => 'Incident deleted successfully'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete incident: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -167,22 +247,35 @@ class IncidentController extends Controller
     public function assign(Request $request, Incident $incident)
     {
         $validated = $request->validate([
-            'agent_id' => 'required|exists:users,id',
+            'agent_id' => 'nullable|exists:users,id',
         ]);
-        $agent = User::find($validated['agent_id']);
-        if ($agent->role !== 'agent') {
-            return response()->json([
-                'message' => 'User must be an agent to be assigned incidents'
-            ], 400);
+
+        if ($validated['agent_id']) {
+            $agent = User::find($validated['agent_id']);
+            if ($agent->role !== 'agent') {
+                return response()->json([
+                    'message' => 'User must be an agent to be assigned incidents'
+                ], 400);
+            }
+
+            $incident->update([
+                'assigned_agent_id' => $validated['agent_id'],
+                'status' => 'Assigned'
+            ]);
+
+            $message = 'Incident assigned successfully';
+        } else {
+            // Unassign incident
+            $incident->update([
+                'assigned_agent_id' => null,
+                'status' => 'New'
+            ]);
+
+            $message = 'Incident unassigned successfully';
         }
 
-        $incident->update([
-            'assigned_agent_id' => $validated['agent_id'],
-            'status' => 'Assigned'
-        ]);
-
         return response()->json([
-            'message' => 'Incident assigned successfully',
+            'message' => $message,
             'incident' => $incident->load(['category', 'citizen', 'assignedAgent'])
         ], 200);
     }
@@ -207,14 +300,24 @@ class IncidentController extends Controller
     public function assignedIncidents(Request $request)
     {
         $user = $request->user();
+        
+        $perPage = $request->get('per_page', 10);
+        $page = $request->get('page', 1);
 
-        $incidents = Incident::with(['category', 'citizen'])
+        $incidents = Incident::with(['category', 'citizen', 'attachments'])
             ->where('assigned_agent_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
         return response()->json([
-            'incidents' => $incidents
+            'incidents' => $incidents->items(),
+            'pagination' => [
+                'current_page' => $incidents->currentPage(),
+                'last_page' => $incidents->lastPage(),
+                'per_page' => $incidents->perPage(),
+                'total' => $incidents->total(),
+                'has_more_pages' => $incidents->hasMorePages(),
+            ]
         ], 200);
     }
 
