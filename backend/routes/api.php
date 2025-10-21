@@ -14,6 +14,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('categories', [IncidentController::class, 'getCategories']);
     Route::get('/incidents/{incident}', [IncidentController::class, 'show']);
+    Route::get('/attachments/{attachment}/download', [IncidentController::class, 'downloadAttachment']);
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);

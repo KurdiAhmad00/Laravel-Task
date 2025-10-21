@@ -141,7 +141,7 @@ class IncidentController extends Controller
         // Operators and admins can view any incident (no additional checks)
         
         return response()->json([
-            'incident' => $incident->load(['category', 'citizen', 'assignedAgent', 'attachments'])
+            'incident' => $incident->load(['category', 'citizen', 'assignedAgent', 'attachments', 'notes'])
         ], 200);
     }
 
@@ -335,8 +335,19 @@ class IncidentController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'required|in:In Progress,Resolved,Unresolved'
+            'status' => 'required|string'
         ]);
+
+        // Custom validation for status values
+        $allowedStatuses = ['In Progress', 'Resolved', 'Unresolved'];
+        if (!in_array($validated['status'], $allowedStatuses)) {
+            return response()->json([
+                'message' => 'The selected status is invalid.',
+                'errors' => [
+                    'status' => ['The selected status is invalid.']
+                ]
+            ], 422);
+        }
 
         $incident->update([
             'status' => $validated['status'],
@@ -445,5 +456,27 @@ class IncidentController extends Controller
         ->where('is_active', true)
         ->orderBy('name')
         ->get(['id','name']);
+    }
+
+    /**
+     * Download an attachment
+     */
+    public function downloadAttachment(Request $request, Attachment $attachment)
+    {
+        $user = $request->user();
+        
+        if ($attachment->incident->citizen_id !== $user->id && $attachment->incident->assigned_agent_id !== $user->id) {
+            return response()->json([
+                'message' => 'You can only download attachments from your own incidents or assigned incidents'
+            ], 403);
+        }
+
+        if (!Storage::disk('public')->exists($attachment->storage_key)) {
+            return response()->json([
+                'message' => 'File not found'
+            ], 404);
+        }
+
+        return Storage::disk('public')->download($attachment->storage_key, $attachment->filename);
     }
 }

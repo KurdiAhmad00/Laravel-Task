@@ -123,7 +123,15 @@
   border-radius: 8px;
   border: 1px solid #E5E7EB;
   white-space: pre-wrap;
-  min-height: 80px;
+  min-height: 100px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #374151;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .incident-row {
@@ -280,6 +288,30 @@
 .attachment-download:hover {
   background: #2563EB;
   color: white;
+}
+
+.download-btn {
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.download-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.download-btn:active {
+  transform: translateY(0);
 }
 
 .attachment-preview {

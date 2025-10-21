@@ -1,6 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { incidentAPI } from '../../services/api';
 import ViewIncidentModal from '../modals/ViewIncidentModal';
+import StatusUpdateModal from '../modals/StatusUpdateModal';
+import NotesModal from '../modals/NotesModal';
 import './AgentDashboard.css';
 
 const formatDate = (iso) => new Date(iso).toLocaleDateString();
@@ -9,8 +11,10 @@ const StatusBadge = ({ status }) => {
   const getStatusColor = (status) => {
     switch ((status || '').toLowerCase()) {
       case 'new': return '#3B82F6';
+      case 'assigned': return '#8B5CF6';
       case 'in progress': return '#F59E0B';
       case 'resolved': return '#10B981';
+      case 'unresolved': return '#EF4444';
       case 'closed': return '#6B7280';
       default: return '#8B5CF6';
     }
@@ -78,8 +82,20 @@ const AgentDashboard = () => {
   const [statusModal, setStatusModal] = useState({ visible: false, incidentId: null });
   const [notesModal, setNotesModal] = useState({ visible: false, incidentId: null });
   
+  // Filter states
+  const [filters, setFilters] = useState({
+    search: '',
+    citizen: ''
+  });
+  
+  // All incidents data (unfiltered)
+  const [allIncidents, setAllIncidents] = useState([]);
+  
   // Prevent duplicate API calls with ref
   const hasLoadedRef = useRef(false);
+  
+  // Debounce timer ref
+  const searchTimeoutRef = useRef(null);
 
   const loadIncidents = async (page = 1) => {
     setLoading(true);
@@ -88,7 +104,9 @@ const AgentDashboard = () => {
       const { data } = await incidentAPI.getAssignedIncidents(page, 10);
       const list = Array.isArray(data?.incidents) ? data.incidents : [];
       
-      setIncidents(list);
+      setAllIncidents(list);
+      applyFilters(list);
+      
       if (data?.pagination) {
         setPagination({
           currentPage: data.pagination.current_page,
@@ -105,6 +123,28 @@ const AgentDashboard = () => {
     }
   };
 
+  const applyFilters = useCallback((dataToFilter = allIncidents) => {
+    let filteredList = [...dataToFilter];
+    
+    // Apply client-side filtering
+    if (filters.search) {
+      filteredList = filteredList.filter(incident => 
+        incident.title.toLowerCase().includes(filters.search.toLowerCase()) ||
+        incident.description.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+    
+    
+    if (filters.citizen) {
+      filteredList = filteredList.filter(incident => 
+        incident.citizen?.name?.toLowerCase().includes(filters.citizen.toLowerCase()) ||
+        incident.citizen?.email?.toLowerCase().includes(filters.citizen.toLowerCase())
+      );
+    }
+    
+    setIncidents(filteredList);
+  }, [filters, allIncidents]);
+
   useEffect(() => {
     // Prevent duplicate calls in StrictMode
     if (hasLoadedRef.current) {
@@ -113,6 +153,22 @@ const AgentDashboard = () => {
     
     hasLoadedRef.current = true;
     loadIncidents(1);
+  }, []);
+
+  // Apply filters when allIncidents or filters change
+  useEffect(() => {
+    if (allIncidents.length > 0) {
+      applyFilters();
+    }
+  }, [allIncidents, applyFilters]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handleView = (incidentId) => {
@@ -130,6 +186,40 @@ const AgentDashboard = () => {
   const handleIncidentUpdated = () => {
     // Refresh the incidents list after any update
     loadIncidents(pagination.currentPage);
+  };
+
+  const handleFilterChange = (filterType, value) => {
+    const newFilters = { ...filters, [filterType]: value };
+    setFilters(newFilters);
+    
+    // For search input, use debounced filtering
+    if (filterType === 'search') {
+      // Clear existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      
+      // Set new timeout for debounced search
+      searchTimeoutRef.current = setTimeout(() => {
+        applyFilters();
+      }, 300); // 300ms delay
+    } else {
+      // For dropdowns, apply immediately
+      setTimeout(() => applyFilters(), 0);
+    }
+  };
+
+  const clearFilters = () => {
+    const clearedFilters = { search: '', citizen: '' };
+    setFilters(clearedFilters);
+    
+    // Clear any pending search timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Apply filters immediately
+    setTimeout(() => applyFilters(), 0);
   };
 
   if (loading) {
@@ -158,7 +248,38 @@ const AgentDashboard = () => {
       <div className="dashboard-header-row">
         <h2 className="dashboard-title">My Assigned Incidents</h2>
         <div className="incident-count">
-          {pagination.total} incident{pagination.total !== 1 ? 's' : ''} assigned
+          {incidents.length} incident{incidents.length !== 1 ? 's' : ''} assigned
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="filters-container">
+        <div className="filter-group">
+          <input
+            type="text"
+            placeholder="Search incidents..."
+            value={filters.search}
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            className="search-input"
+          />
+        </div>
+        
+        
+        
+        <div className="filter-group">
+          <input
+            type="text"
+            placeholder="Filter by citizen..."
+            value={filters.citizen}
+            onChange={(e) => handleFilterChange('citizen', e.target.value)}
+            className="search-input"
+          />
+        </div>
+        
+        <div className="filter-group">
+          <button onClick={clearFilters} className="clear-filters-btn">
+            Clear Filters
+          </button>
         </div>
       </div>
 
@@ -189,10 +310,6 @@ const AgentDashboard = () => {
                   <td>#{incident.id}</td>
                   <td className="title-cell">
                     <div className="incident-title">{incident.title}</div>
-                    <div className="incident-description">
-                      {incident.description?.substring(0, 100)}
-                      {incident.description?.length > 100 ? '...' : ''}
-                    </div>
                   </td>
                   <td>{incident.category?.name || '—'}</td>
                   <td>
@@ -282,9 +399,22 @@ const AgentDashboard = () => {
         open={viewModal.visible}
         onClose={() => setViewModal({ visible: false, incidentId: null })}
         incidentId={viewModal.incidentId}
+        userRole="agent"
       />
 
-      {/* TODO: Add Status Update Modal and Notes Modal */}
+      <StatusUpdateModal
+        open={statusModal.visible}
+        onClose={() => setStatusModal({ visible: false, incidentId: null })}
+        incidentId={statusModal.incidentId}
+        onStatusUpdated={handleIncidentUpdated}
+      />
+
+      <NotesModal
+        open={notesModal.visible}
+        onClose={() => setNotesModal({ visible: false, incidentId: null })}
+        incidentId={notesModal.incidentId}
+        onNoteAdded={handleIncidentUpdated}
+      />
     </div>
   );
 };

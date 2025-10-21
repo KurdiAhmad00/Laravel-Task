@@ -401,6 +401,7 @@ const OperatorDashboard = () => {
         open={viewModal.visible}
         onClose={() => setViewModal({ visible: false, incidentId: null })}
         incidentId={viewModal.incidentId}
+        userRole="operator"
       />
 
       <PriorityModal

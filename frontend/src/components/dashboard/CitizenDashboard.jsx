@@ -191,6 +191,7 @@ const CitizenDashboard = () => {
         open={viewModal.visible}
         onClose={() => setViewModal({ visible: false, incidentId: null })}
         incidentId={viewModal.incidentId}
+        userRole="citizen"
       />
 
       {error && (

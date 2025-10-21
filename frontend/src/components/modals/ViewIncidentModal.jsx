@@ -6,7 +6,7 @@ const getStorageUrl = (storageKey) => {
   return `http://localhost:8000/storage/${storageKey}`;
 };
 
-const ViewIncidentModal = ({ open, onClose, incidentId }) => {
+const ViewIncidentModal = ({ open, onClose, incidentId, userRole = 'citizen' }) => {
   const [incident, setIncident] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,6 +31,53 @@ const ViewIncidentModal = ({ open, onClose, incidentId }) => {
   }, [open, incidentId]);
 
   const formatDate = (iso) => new Date(iso).toLocaleString();
+
+  const getRoleColor = (role) => {
+    switch ((role || 'citizen').toLowerCase()) {
+      case 'citizen': return '#3B82F6'; // Blue
+      case 'operator': return '#8B5CF6'; // Purple
+      case 'agent': return '#F59E0B'; // Orange
+      case 'admin': return '#EF4444'; // Red
+      default: return '#10B981'; // Green fallback
+    }
+  };
+
+  const handleDownload = async (attachment) => {
+    try {
+      // Get the token for authentication
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:8000/api/attachments/${attachment.id}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': '*/*'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Create a temporary URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary anchor element to trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.filename;
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Failed to download file. Please try again.');
+    }
+  };
 
   const getPriorityColor = (priority) => {
     switch ((priority || '').toLowerCase()) {
@@ -144,6 +191,14 @@ const ViewIncidentModal = ({ open, onClose, incidentId }) => {
                         <span className="attachment-size">({(attachment.size_bytes / 1024).toFixed(1)} KB)</span>
                       </div>
                       <div className="attachment-actions">
+                        <button 
+                          className="download-btn"
+                          onClick={() => handleDownload(attachment)}
+                          title="Download file"
+                          style={{ backgroundColor: getRoleColor(userRole) }}
+                        >
+                          Download
+                        </button>
                         {attachment.content_type?.startsWith('image/') && (
                           <div className="attachment-preview">
                             <img 
