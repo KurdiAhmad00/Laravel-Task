@@ -52,6 +52,11 @@ class Incident extends Model
     {
         return $this->hasMany(Attachment::class);
     }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
+    }
     
     public function scopeOpen($query)
     {

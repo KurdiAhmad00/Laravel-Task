@@ -10,7 +10,7 @@ const AppRoutes = ({ onLogin, onRegistered, initialEmail }) => {
     <Routes>
       <Route path="/login" element={<Login onLogin={onLogin} onSwitchToRegister={() => {}} initialEmail={initialEmail} />} />
       <Route path="/register" element={<Register onRegistered={onRegistered} onSwitchToLogin={() => {}} />} />
-      <Route path="/dashboard" element={
+      <Route path="/dashboard/*" element={
         <PrivateRoute>
           <RoleDashboard />
         </PrivateRoute>

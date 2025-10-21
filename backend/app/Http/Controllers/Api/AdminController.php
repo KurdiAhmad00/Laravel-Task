@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Category;
+use App\Models\AuditLog;
+use App\Models\Incident;
 use Illuminate\Http\Request;
 
 class AdminController extends Controller
@@ -43,9 +45,27 @@ class AdminController extends Controller
      */
     public function updateRole(Request $request, User $user)
     {
+        $currentUser = $request->user();
+        
+        // Prevent admin from changing their own role
+        if ($currentUser->id === $user->id) {
+            return response()->json([
+                'message' => 'You cannot change your own role',
+                'errors' => ['role' => ['You cannot change your own role']]
+            ], 403);
+        }
+        
+        // Prevent admin from assigning admin role to others
         $validated = $request->validate([
             'role' => 'required|in:citizen,operator,agent,admin'
         ]);
+        
+        if ($validated['role'] === 'admin') {
+            return response()->json([
+                'message' => 'You cannot assign admin role to other users',
+                'errors' => ['role' => ['You cannot assign admin role to other users']]
+            ], 403);
+        }
 
         $user->update(['role' => $validated['role']]);
 
@@ -121,12 +141,48 @@ class AdminController extends Controller
     }
     public function getAuditLogs(Request $request)
     {
-        return response()->json(['message' => 'Audit logs endpoint - coming soon'], 200);
-
+        $perPage = $request->get('per_page', 20);
+        $page = $request->get('page', 1);
+        
+        $auditLogs = AuditLog::with(['incident', 'actor'])
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage, ['*'], 'page', $page);
+            
+        return response()->json([
+            'audit_logs' => $auditLogs->items(),
+            'pagination' => [
+                'current_page' => $auditLogs->currentPage(),
+                'last_page' => $auditLogs->lastPage(),
+                'per_page' => $auditLogs->perPage(),
+                'total' => $auditLogs->total(),
+            ]
+        ], 200);
     }
+    
     public function getIncidentAuditLogs(Incident $incident)
     {
-        return response()->json(['message' => 'Incident audit logs endpoint - coming soon'], 200);
-
+        $auditLogs = AuditLog::with(['actor'])
+            ->where('incident_id', $incident->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+            
+        return response()->json([
+            'incident' => $incident->load(['category', 'citizen', 'assignedAgent']),
+            'audit_logs' => $auditLogs
+        ], 200);
+    }
+    public function deleteUser(Request $request, User $user)
+    {
+        $currentUser = $request->user();
+        if ($currentUser->id === $user->id) {
+            return response()->json([
+                'message' => 'You cannot delete your own account',
+                'errors' => ['user' => ['You cannot delete your own account']]
+            ], 403);
+        }
+        $user->delete();
+        return response()->json([
+            'message' => 'User deleted successfully'
+        ], 200);
     }
 }

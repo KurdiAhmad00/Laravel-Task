@@ -1,0 +1,237 @@
+/* Configuration */
+.configuration {
+  padding: 32px;
+}
+
+/* Header */
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.config-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.config-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.save-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #EF4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: #DC2626;
+  transform: translateY(-1px);
+}
+
+.save-btn:disabled {
+  background: #9CA3AF;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-icon {
+  font-size: 16px;
+}
+
+.loading-spinner.small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.save-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #D1FAE5;
+  color: #065F46;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.success-icon {
+  font-size: 16px;
+}
+
+/* Config Sections */
+.config-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.config-section {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.config-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+/* Config Grid */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+/* Config Item */
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-item.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.config-item label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.config-item input[type="number"],
+.config-item input[type="text"],
+.config-item select {
+  padding: 10px 12px;
+  border: 2px solid #E5E7EB;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #111827;
+  background: white;
+  transition: all 0.2s ease;
+}
+
+.config-item input[type="number"]:focus,
+.config-item input[type="text"]:focus,
+.config-item select:focus {
+  outline: none;
+  border-color: #EF4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.config-item input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #EF4444;
+  cursor: pointer;
+}
+
+.config-item.checkbox label {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .configuration {
+    padding: 20px;
+  }
+  
+  .config-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .config-actions {
+    justify-content: center;
+  }
+  
+  .config-sections {
+    gap: 24px;
+  }
+  
+  .config-section {
+    padding: 20px;
+  }
+  
+  .config-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .config-item.checkbox {
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .config-header h2 {
+    font-size: 20px;
+  }
+  
+  .config-section h3 {
+    font-size: 16px;
+  }
+  
+  .config-item input[type="number"],
+  .config-item input[type="text"],
+  .config-item select {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}

@@ -20,5 +20,8 @@ class DatabaseSeeder extends Seeder
         
         // Create test users
         $this->call(\Database\Seeders\TestUsersSeeder::class);
+        
+        // Create sample audit logs
+        $this->call(\Database\Seeders\AuditLogSeeder::class);
     }
 }

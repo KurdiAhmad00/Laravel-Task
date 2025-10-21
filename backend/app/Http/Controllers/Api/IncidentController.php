@@ -7,6 +7,7 @@ use App\Models\Incident;
 use App\Models\User;
 use App\Models\IncidentNote;
 use App\Models\Attachment;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -246,6 +247,7 @@ class IncidentController extends Controller
      */
     public function assign(Request $request, Incident $incident)
     {
+        $user = $request->user();
         $validated = $request->validate([
             'agent_id' => 'nullable|exists:users,id',
         ]);
@@ -258,17 +260,55 @@ class IncidentController extends Controller
                 ], 400);
             }
 
+            // Store old values for audit log
+            $oldAgentId = $incident->assigned_agent_id;
+            $oldStatus = $incident->status;
+
             $incident->update([
                 'assigned_agent_id' => $validated['agent_id'],
                 'status' => 'Assigned'
             ]);
 
+            // Create audit log for assignment
+            AuditLog::create([
+                'incident_id' => $incident->id,
+                'actor_id' => $user->id,
+                'action' => 'assigned',
+                'old_values' => json_encode([
+                    'assigned_agent_id' => $oldAgentId,
+                    'status' => $oldStatus
+                ]),
+                'new_values' => json_encode([
+                    'assigned_agent_id' => $validated['agent_id'],
+                    'status' => 'Assigned'
+                ])
+            ]);
+
             $message = 'Incident assigned successfully';
         } else {
+            // Store old values for audit log
+            $oldAgentId = $incident->assigned_agent_id;
+            $oldStatus = $incident->status;
+
             // Unassign incident
             $incident->update([
                 'assigned_agent_id' => null,
                 'status' => 'New'
+            ]);
+
+            // Create audit log for unassignment
+            AuditLog::create([
+                'incident_id' => $incident->id,
+                'actor_id' => $user->id,
+                'action' => 'unassigned',
+                'old_values' => json_encode([
+                    'assigned_agent_id' => $oldAgentId,
+                    'status' => $oldStatus
+                ]),
+                'new_values' => json_encode([
+                    'assigned_agent_id' => null,
+                    'status' => 'New'
+                ])
             ]);
 
             $message = 'Incident unassigned successfully';
@@ -282,11 +322,24 @@ class IncidentController extends Controller
 
     public function updatePriority(Request $request, Incident $incident)
     {
+        $user = $request->user();
         $validated = $request->validate([
             'priority' => 'required|in:Low,Medium,High'
         ]);
 
+        // Store old value for audit log
+        $oldPriority = $incident->priority;
+
         $incident->update(['priority' => $validated['priority']]);
+
+        // Create audit log for priority change
+        AuditLog::create([
+            'incident_id' => $incident->id,
+            'actor_id' => $user->id,
+            'action' => 'priority_changed',
+            'old_values' => json_encode(['priority' => $oldPriority]),
+            'new_values' => json_encode(['priority' => $validated['priority']])
+        ]);
 
         return response()->json([
             'message' => 'Incident priority updated successfully',
@@ -349,9 +402,21 @@ class IncidentController extends Controller
             ], 422);
         }
 
+        // Store old values for audit log
+        $oldStatus = $incident->status;
+        
         $incident->update([
             'status' => $validated['status'],
             'resolved_at' => in_array($validated['status'], ['Resolved']) ? now() : null,
+        ]);
+
+        // Create audit log for status change
+        AuditLog::create([
+            'incident_id' => $incident->id,
+            'actor_id' => $user->id,
+            'action' => 'status_changed',
+            'old_values' => json_encode(['status' => $oldStatus]),
+            'new_values' => json_encode(['status' => $validated['status']])
         ]);
 
         return response()->json([
@@ -381,6 +446,15 @@ class IncidentController extends Controller
             'incident_id' => $incident->id,
             'user_id' => $user->id,
             'body' => $validated['body'],
+        ]);
+
+        // Create audit log for note addition
+        AuditLog::create([
+            'incident_id' => $incident->id,
+            'actor_id' => $user->id,
+            'action' => 'note_added',
+            'old_values' => null,
+            'new_values' => json_encode(['note' => $validated['body']])
         ]);
 
         return response()->json([
@@ -416,6 +490,15 @@ class IncidentController extends Controller
             'storage_key' => $path,
         ]);
 
+        // Create audit log for attachment upload
+        AuditLog::create([
+            'incident_id' => $incident->id,
+            'actor_id' => $user->id,
+            'action' => 'attachment_added',
+            'old_values' => null,
+            'new_values' => json_encode(['attachment' => $file->getClientOriginalName()])
+        ]);
+
         return response()->json([
             'message' => 'File uploaded successfully',
             'attachment' => $attachment
@@ -441,9 +524,23 @@ class IncidentController extends Controller
                 'message' => 'You can only delete your own attachments'
             ], 403);
         }
+        // Store attachment info for audit log before deletion
+        $attachmentName = $attachment->filename;
+        $incidentId = $attachment->incident_id;
+
         Storage::disk('public')->delete($attachment->storage_key);
 
         $attachment->delete();
+
+        // Create audit log for attachment deletion
+        AuditLog::create([
+            'incident_id' => $incidentId,
+            'actor_id' => $user->id,
+            'action' => 'attachment_removed',
+            'old_values' => json_encode(['attachment' => $attachmentName]),
+            'new_values' => null
+        ]);
+
         return response()->json([
             'message' => 'Attachment deleted successfully'
         ], 200);

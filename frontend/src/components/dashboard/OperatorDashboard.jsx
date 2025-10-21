@@ -3,6 +3,7 @@ import { incidentAPI, adminAPI, categoriesAPI } from '../../services/api';
 import ViewIncidentModal from '../modals/ViewIncidentModal';
 import PriorityModal from '../modals/PriorityModal';
 import AssignAgentModal from '../modals/AssignAgentModal';
+import AuditLogModal from '../modals/AuditLogModal';
 import './OperatorDashboard.css';
 
 const formatDate = (iso) => new Date(iso).toLocaleDateString();
@@ -279,61 +280,58 @@ const OperatorDashboard = () => {
       )}
 
       {!loading && !error && (
-        <div className="dashboard-table table-wrapper">
-          <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+        <div className="incidents-table-container">
+          <table className="incidents-table">
             <thead>
-              <tr style={{ background: '#F9FAFB', textAlign: 'left' }}>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Title</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Category</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Priority</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Status</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Assigned Agent</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Citizen</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Created</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Actions</th>
+              <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Assigned Agent</th>
+                <th>Citizen</th>
+                <th>Created</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredIncidents.map((incident) => (
-                <tr 
-                  key={incident.id} 
-                  style={{ borderTop: '1px solid #E5E7EB' }}
-                >
-                  <td style={{ padding: '12px 16px' }}>{incident.title}</td>
-                  <td style={{ padding: '12px 16px' }}>{incident.category?.name || '—'}</td>
-                  <td style={{ padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
+                <tr key={incident.id}>
+                  <td className="incident-title">{incident.title}</td>
+                  <td className="incident-category">{incident.category?.name || '—'}</td>
+                  <td className="incident-priority">
                     <PriorityDot priority={incident.priority} />
-                    <span style={{ textTransform: 'capitalize' }}>{incident.priority || '—'}</span>
+                    <span className="priority-text">{incident.priority || '—'}</span>
                   </td>
-                  <td style={{ padding: '12px 16px' }}><StatusBadge status={incident.status} /></td>
-                  <td style={{ padding: '12px 16px' }}>{incident.assigned_agent?.name || 'Unassigned'}</td>
-                  <td style={{ padding: '12px 16px' }}>{incident.citizen?.name || incident.citizen?.email || '—'}</td>
-                  <td style={{ padding: '12px 16px' }}>{incident.created_at ? formatDate(incident.created_at) : '—'}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <div className="action-buttons">
+                  <td className="incident-status"><StatusBadge status={incident.status} /></td>
+                  <td className="incident-agent">{incident.assigned_agent?.name || 'Unassigned'}</td>
+                  <td className="incident-citizen">{incident.citizen?.name || incident.citizen?.email || '—'}</td>
+                  <td className="incident-created">{incident.created_at ? formatDate(incident.created_at) : '—'}</td>
+                  <td className="incident-actions">
+                    <div className="operator-action-buttons">
                       <button 
-                        className="action-btn view-btn"
+                        className="operator-action-btn view-btn"
                         onClick={() => handleView(incident.id)}
                         title="View Details"
                       >
                         👁️
                       </button>
                       <button 
-                        className="action-btn assign-btn"
+                        className="operator-action-btn assign-btn"
                         onClick={() => handleAssign(incident.id)}
                         title="Assign Agent"
                       >
                         👤
                       </button>
                       <button 
-                        className="action-btn priority-btn"
+                        className="operator-action-btn priority-btn"
                         onClick={() => handlePriority(incident.id)}
                         title="Update Priority"
                       >
                         ⚡
                       </button>
                       <button 
-                        className="action-btn audit-btn"
+                        className="operator-action-btn audit-btn"
                         onClick={() => handleAudit(incident.id)}
                         title="View Audit Log"
                       >
@@ -345,7 +343,7 @@ const OperatorDashboard = () => {
               ))}
               {filteredIncidents.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ height: '100%' }}>
+                  <td colSpan={8} className="empty-state">
                     <div className="dashboard-empty">
                       No incidents found matching your filters.
                     </div>
@@ -418,8 +416,15 @@ const OperatorDashboard = () => {
         onUpdated={handleAssignmentUpdated}
       />
 
+      <AuditLogModal
+        open={auditModal.visible}
+        onClose={() => setAuditModal({ visible: false, incidentId: null })}
+        incidentId={auditModal.incidentId}
+        incidentTitle={incidents.find(i => i.id === auditModal.incidentId)?.title}
+      />
+
       {/* TODO: Add other modals */}
-      {/* AuditModal, ImportModal */}
+      {/* ImportModal */}
     </div>
   );
 };

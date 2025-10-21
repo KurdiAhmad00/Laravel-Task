@@ -104,6 +104,22 @@
   color: #374151;
 }
 
+/* Table Cell Styles */
+.incident-priority {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priority-text {
+  text-transform: capitalize;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+}
+
 .incidents-table tr:hover {
   background: #F9FAFB;
 }
@@ -133,12 +149,15 @@
 }
 
 /* Action Buttons */
-.action-buttons {
+.operator-action-buttons {
   display: flex;
+  flex-direction: row;
   gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
 }
 
-.action-btn {
+.operator-action-btn {
   width: 32px;
   height: 32px;
   border: none;

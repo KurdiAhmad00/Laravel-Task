@@ -52,16 +52,14 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Admin routes
     Route::middleware('role:admin')->group(function () {
-        Route::get('/all-incidents', [IncidentController::class, 'allIncidents']);
+        Route::get('/incidents', [IncidentController::class, 'index']); 
         Route::get('/users', [AdminController::class, 'index']);
         Route::put('/users/{user}/role', [AdminController::class, 'updateRole']);
-        
+        Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
         // Category management
         Route::post('/categories', [AdminController::class, 'createCategory']);
         Route::put('/categories/{category}', [AdminController::class, 'updateCategory']);
         Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory']);
-        Route::get('/audit-logs', [AdminController::class, 'getAuditLogs']);
-        Route::get('/audit-logs/{incident}', [AdminController::class, 'getIncidentAuditLogs']);
 
     });
 });
