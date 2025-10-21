@@ -24,7 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // File attachments
         Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment']);
         Route::get('/incidents/{incident}/attachments', [IncidentController::class, 'getAttachments']);
-        Route::delete('/attachments/{attachment}', [IncidentController::class, 'deleteAttachment']);
+        Route::delete('/attachments/{attachment}', [IncidentController::class, 'DeleteAttachment']);
     });
     
     // Operator routes
@@ -39,11 +39,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/assigned-incidents', [IncidentController::class, 'assignedIncidents']);
         Route::post('/incidents/{incident}/status', [IncidentController::class, 'updateStatus']);
         Route::post('/incidents/{incident}/notes', [IncidentController::class, 'addNote']);
-        
-        // File attachments (agents can upload to assigned incidents)
-        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment']);
-        Route::get('/incidents/{incident}/attachments', [IncidentController::class, 'getAttachments']);
-        Route::delete('/attachments/{attachment}', [IncidentController::class, 'deleteAttachment']);
     });
     
     // Admin routes

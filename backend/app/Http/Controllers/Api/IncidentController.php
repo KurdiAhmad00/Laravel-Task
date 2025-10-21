@@ -18,7 +18,7 @@ class IncidentController extends Controller
      */
     public function index(Request $request)
     {
-        $incidents = Incident::with(['category', 'citizen', 'assignedAgent'])
+        $incidents = Incident::with(['category', 'citizen', 'assignedAgent', 'attachments'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -35,7 +35,7 @@ class IncidentController extends Controller
         $user = $request->user();
         
         $incidents = $user->reportedIncidents()
-            ->with('category')
+            ->with(['category', 'attachments'])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -49,12 +49,14 @@ class IncidentController extends Controller
      */
     public function store(Request $request)
     {
-        $validated=$request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
-            'location_lat' => 'required|numeric|between:-90,90',
-            'location_lng' => 'required|numeric|between:-180,180',
+            'priority' => 'required|in:low,medium,high',
+            'location_lat' => 'nullable|numeric|between:-90,90',
+            'location_lng' => 'nullable|numeric|between:-180,180',
+            'attachments.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf,doc,docx,txt|max:10240', // 10MB max
         ]);
 
         $user = $request->user();
@@ -66,13 +68,29 @@ class IncidentController extends Controller
             'location_lat' => $validated['location_lat'],
             'location_lng' => $validated['location_lng'],
             'citizen_id' => $user->id,
-            'priority' => 'Low',
+            'priority' => ucfirst($validated['priority']),
             'status' => 'New',
         ]);
 
+        // Handle file uploads
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $storageKey = $file->storeAs('incident_attachments', $filename, 'public');
+                
+                // Create attachment record
+                $incident->attachments()->create([
+                    'filename' => $file->getClientOriginalName(),
+                    'content_type' => $file->getMimeType(),
+                    'size_bytes' => $file->getSize(),
+                    'storage_key' => $storageKey,
+                ]);
+            }
+        }
+
         return response()->json([
             'message' => 'Incident created successfully',
-            'incident' => $incident ->load('category'),
+            'incident' => $incident->load(['category', 'attachments']),
         ], 201);
     }
 
@@ -91,7 +109,7 @@ class IncidentController extends Controller
         }
         
         return response()->json([
-            'incident' => $incident->load('category')
+            'incident' => $incident->load(['category', 'attachments'])
         ], 200);
     }
 
@@ -110,6 +128,8 @@ class IncidentController extends Controller
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
             'category_id' => 'sometimes|exists:categories,id',
+            'location_lat' => 'sometimes|numeric|between:-90,90',
+            'location_lng' => 'sometimes|numeric|between:-180,180',
         ]);
         
         $incident->update($validated);

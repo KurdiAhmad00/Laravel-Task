@@ -12,6 +12,7 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
     location_lat: '',
     location_lng: '',
   });
+  const [files, setFiles] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -32,6 +33,15 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
     setForm((f) => ({ ...f, [name]: value }));
   };
 
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    setFiles(prev => [...prev, ...selectedFiles]);
+  };
+
+  const removeFile = (index) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -41,12 +51,20 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
     }
     setSubmitting(true);
     try {
-      const payload = {
-        ...form,
-        location_lat: form.location_lat === '' ? null : form.location_lat,
-        location_lng: form.location_lng === '' ? null : form.location_lng,
-      };
-      await incidentAPI.createIncident(payload);
+      const formData = new FormData();
+      formData.append('title', form.title);
+      formData.append('description', form.description);
+      formData.append('category_id', form.category_id);
+      formData.append('priority', form.priority);
+      formData.append('location_lat', form.location_lat === '' ? '' : form.location_lat);
+      formData.append('location_lng', form.location_lng === '' ? '' : form.location_lng);
+      
+      // Add files
+      files.forEach((file) => {
+        formData.append('attachments[]', file);
+      });
+
+      await incidentAPI.createIncident(formData);
       if (onCreated) onCreated();
       onClose();
     } catch (err) {
@@ -96,6 +114,35 @@ const ReportIncidentModal = ({ open, onClose, onCreated }) => {
           <div className="form-row">
             <label htmlFor="description">Description<span className="req">*</span></label>
             <textarea id="description" name="description" value={form.description} onChange={handleChange} rows={4} required />
+          </div>
+
+          <div className="form-row">
+            <label htmlFor="attachments">Attachments (Optional)</label>
+            <input
+              id="attachments"
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.txt"
+              onChange={handleFileChange}
+              className="file-input"
+            />
+            {files.length > 0 && (
+              <div className="file-list">
+                {files.map((file, index) => (
+                  <div key={index} className="file-item">
+                    <span className="file-name">{file.name}</span>
+                    <span className="file-size">({(file.size / 1024).toFixed(1)} KB)</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="remove-file-btn"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="form-row grid-2">

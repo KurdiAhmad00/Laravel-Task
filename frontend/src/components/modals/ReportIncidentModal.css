@@ -87,3 +87,70 @@
 .btn-primary:hover { 
     background: linear-gradient(135deg, #5a67d8 0%, #c7c0da 100%); 
     color: #fff; }
+
+/* File upload styles */
+.file-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px dashed #D1D5DB;
+  border-radius: 8px;
+  background: #F9FAFB;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.file-input:hover {
+  border-color: #3B82F6;
+  background: #F0F9FF;
+}
+
+.file-list {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #F3F4F6;
+  border-radius: 6px;
+  border: 1px solid #E5E7EB;
+}
+
+.file-name {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.file-size {
+  font-size: 12px;
+  color: #6B7280;
+  margin-right: 8px;
+}
+
+.remove-file-btn {
+  background: #EF4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.remove-file-btn:hover {
+  background: #DC2626;
+}

@@ -114,4 +114,82 @@
 .chip-agent { background: #F59E0B; }
 .chip-admin { background: #EF4444; }
 
+/* Delete Confirmation Modal */
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.delete-modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.delete-modal-title {
+  margin: 0 0 16px 0;
+  color: #374151;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.delete-modal-message {
+  margin: 0 0 24px 0;
+  color: #6B7280;
+  line-height: 1.5;
+}
+
+.delete-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.delete-modal-cancel-btn {
+  padding: 8px 16px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.delete-modal-cancel-btn:hover {
+  background: #F9FAFB;
+}
+
+.delete-modal-delete-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #DC2626;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.delete-modal-delete-btn:hover:not(:disabled) {
+  background: #B91C1C;
+}
+
+.delete-modal-delete-btn:disabled {
+  background: #9CA3AF;
+  cursor: not-allowed;
+}
 

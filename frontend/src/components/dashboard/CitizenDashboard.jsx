@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { incidentAPI } from '../../services/api';
 import ReportIncidentModal from '../modals/ReportIncidentModal';
+import ViewIncidentModal from '../modals/ViewIncidentModal';
+import EditIncidentModal from '../modals/EditIncidentModal';
 
 const formatDate = (iso) => new Date(iso).toLocaleString();
 
@@ -24,6 +26,68 @@ const CitizenDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, incidentId: null });
+  const [confirmDelete, setConfirmDelete] = useState({ visible: false, incidentId: null, title: '' });
+  const [editModal, setEditModal] = useState({ visible: false, incidentId: null });
+  const [viewModal, setViewModal] = useState({ visible: false, incidentId: null });
+  
+  const handleDeleteClick = (incidentId) => {
+    const incident = incidents.find(i => i.id === incidentId);
+    setConfirmDelete({
+      visible: true,
+      incidentId: incidentId,
+      title: incident?.title || 'this incident'
+    });
+    setContextMenu({ visible: false, x: 0, y: 0, incidentId: null });
+  }
+
+  const handleDeleteConfirm = async () => {
+    const { incidentId } = confirmDelete;
+    setDeletingId(incidentId);
+    setError('');
+    try{
+      await incidentAPI.deleteIncident(incidentId);
+      setIncidents(prev => prev.filter(i => i.id !== incidentId));
+    } catch (e) {
+      setError(e.response?.data?.message || 'Failed to delete incident');
+    } finally {
+      setDeletingId(null);
+    }
+    setConfirmDelete({ visible: false, incidentId: null, title: '' });
+  }
+
+  const handleDeleteCancel = () => {
+    setConfirmDelete({ visible: false, incidentId: null, title: '' });
+  }
+  const handleEdit = (incidentId) => {
+    if (incidentId && typeof incidentId === 'number') {
+        setEditModal({ visible: true, incidentId: incidentId });
+    } else {
+        return;
+    }
+    
+    setContextMenu({ visible: false, x: 0, y: 0, incidentId: null });
+}
+
+  const handleView = (incidentId) => {
+    setViewModal({ visible: true, incidentId: incidentId });
+    setContextMenu({ visible: false, x: 0, y: 0, incidentId: null });
+  }
+
+  const handleContextMenu = (e, incidentId) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      incidentId: incidentId
+    });
+  }
+
+  const handleClickOutside = () => {
+    setContextMenu({ visible: false, x: 0, y: 0, incidentId: null });
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -32,7 +96,13 @@ const CitizenDashboard = () => {
         const { data } = await incidentAPI.getMyIncidents();
         const list = Array.isArray(data)
           ? data
-          : (Array.isArray(data?.incidents) ? data.incidents : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.items) ? data.items : (Array.isArray(data?.results) ? data.results : []))));
+          : (Array.isArray(data?.incidents) ? data.incidents 
+          : (Array.isArray(data?.data) ? data.data
+          : (Array.isArray(data?.items) ? data.items  
+          : (Array.isArray(data?.citizen) ? data.citizen 
+          : (Array.isArray(data?.results) ? data.results 
+          : [])))));
+
         if (mounted) setIncidents(list);
       } catch (e) {
         setError(e.response?.data?.message || 'Failed to load your incidents');
@@ -42,6 +112,14 @@ const CitizenDashboard = () => {
     })();
     return () => { mounted = false; };
   }, []);
+
+  useEffect(() => {
+    if (contextMenu.visible) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [contextMenu.visible]);
+
 
   return (
     <div>
@@ -68,11 +146,39 @@ const CitizenDashboard = () => {
               const { data } = await incidentAPI.getMyIncidents();
               const list = Array.isArray(data)
                 ? data
-                : (Array.isArray(data?.incidents) ? data.incidents : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.items) ? data.items : (Array.isArray(data?.results) ? data.results : []))));
+                : (Array.isArray(data?.incidents) ? data.incidents : 
+                (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.items) ? data.items : 
+                (Array.isArray(data?.results) ? data.results : 
+                (Array.isArray(data?.citizen) ? data.citizen : [])))));
               setIncidents(list);
             } catch (_) {}
           })();
         }}
+      />
+      <EditIncidentModal
+          open={editModal.visible}
+          onClose={() => setEditModal({ visible: false, incidentId: null })}
+          incidentId={editModal.incidentId}
+          onUpdated={() => {
+          (async () => {
+            try {
+                const { data } = await incidentAPI.getMyIncidents();
+                const list = Array.isArray(data)
+                    ? data
+                    : (Array.isArray(data?.incidents) ? data.incidents : 
+                    (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.items) ? data.items : 
+                    (Array.isArray(data?.results) ? data.results : 
+                    (Array.isArray(data?.citizen) ? data.citizen : [])))));
+                    setIncidents(list);
+            } catch (_) {}
+          })();
+        }}
+        />
+
+      <ViewIncidentModal
+        open={viewModal.visible}
+        onClose={() => setViewModal({ visible: false, incidentId: null })}
+        incidentId={viewModal.incidentId}
       />
 
       {error && (
@@ -84,31 +190,32 @@ const CitizenDashboard = () => {
       {!loading && !error && (
         <div className="dashboard-table table-wrapper">
           <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+            
             <thead>
+              
               <tr style={{ background: '#F9FAFB', textAlign: 'left' }}>
                 <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Title</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Description</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Category</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Priority</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Status</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Lat</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Lng</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, color: '#374151' }}>Created</th>
               </tr>
             </thead>
             <tbody>
               {(Array.isArray(incidents) ? incidents : []).map((i) => (
-                <tr key={i.id} style={{ borderTop: '1px solid #E5E7EB' }}>
+                <tr 
+                  key={i.id} 
+                  style={{ borderTop: '1px solid #E5E7EB', cursor: 'context-menu' }}
+                  onContextMenu={(e) => handleContextMenu(e, i.id)}
+                  title="Right-click for options"
+                >
                   <td style={{ padding: '12px 16px' }}>{i.title}</td>
-                  <td style={{ padding: '12px 16px', maxWidth: 280, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{i.description || '-'}</td>
                   <td style={{ padding: '12px 16px' }}>{i.category?.name || i.category_name || i.category || i.category_id || '-'}</td>
                   <td style={{ padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center' }}>
                     <PriorityDot priority={i.priority} />
                     <span style={{ textTransform: 'capitalize' }}>{i.priority || '—'}</span>
                   </td>
                   <td style={{ padding: '12px 16px' }}><StatusBadge status={i.status} /></td>
-                  <td style={{ padding: '12px 16px' }}>{i.location_lat ?? '-'}</td>
-                  <td style={{ padding: '12px 16px' }}>{i.location_lng ?? '-'}</td>
                   <td style={{ padding: '12px 16px' }}>{i.created_at ? formatDate(i.created_at) : '-'}</td>
                 </tr>
               ))}
@@ -123,6 +230,109 @@ const CitizenDashboard = () => {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Context Menu */}
+      {contextMenu.visible && (
+        <div
+          style={{
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            background: 'white',
+            border: '1px solid #E5E7EB',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            zIndex: 1000,
+            minWidth: '120px',
+          }}
+        >
+          <button
+            onClick={() => handleView(contextMenu.incidentId)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'none',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: '#374151',
+            }}
+            onMouseEnter={(e) => e.target.style.background = '#F3F4F6'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            👁️ View
+          </button>
+          <button
+            onClick={() => handleEdit(contextMenu.incidentId)}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'none',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: '#374151',
+            }}
+            onMouseEnter={(e) => e.target.style.background = '#F3F4F6'}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            ✏️ Edit
+          </button>
+          <button
+            onClick={() => handleDeleteClick(contextMenu.incidentId)}
+            disabled={deletingId === contextMenu.incidentId}
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: 'none',
+              background: 'none',
+              textAlign: 'left',
+              cursor: deletingId === contextMenu.incidentId ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              color: deletingId === contextMenu.incidentId ? '#9CA3AF' : '#DC2626',
+            }}
+            onMouseEnter={(e) => {
+              if (deletingId !== contextMenu.incidentId) {
+                e.target.style.background = '#FEF2F2';
+              }
+            }}
+            onMouseLeave={(e) => e.target.style.background = 'none'}
+          >
+            {deletingId === contextMenu.incidentId ? '⏳ Deleting...' : '🗑️ Delete'}
+          </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete.visible && (
+        <div className="delete-modal-overlay">
+          <div className="delete-modal-content">
+            <h3 className="delete-modal-title">
+              Confirm Delete
+            </h3>
+            <p className="delete-modal-message">
+              Are you sure you want to delete <strong>"{confirmDelete.title}"</strong>? This action cannot be undone.
+            </p>
+            <div className="delete-modal-actions">
+              <button
+                onClick={handleDeleteCancel}
+                className="delete-modal-cancel-btn"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deletingId === confirmDelete.incidentId}
+                className="delete-modal-delete-btn"
+              >
+                {deletingId === confirmDelete.incidentId ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
