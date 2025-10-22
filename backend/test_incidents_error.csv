@@ -1,0 +1,5 @@
+title,description,category_id,latitude,longitude,citizen_username,priority,status
+"Valid incident","This should work",1,40.7128,-74.0060,"test_user","high","new"
+"Invalid category","This should fail",999,40.7128,-74.0060,"test_user2","high","new"
+"Invalid priority","This should fail",1,40.7128,-74.0060,"test_user3","invalid_priority","new"
+"Missing title","This should fail",1,40.7128,-74.0060,"test_user4","high","new"

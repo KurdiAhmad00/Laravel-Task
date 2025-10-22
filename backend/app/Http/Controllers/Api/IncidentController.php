@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Category;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\SendIncidentNotification;
+use App\Jobs\ProcessCsvImport;
 
 class IncidentController extends Controller
 {
@@ -110,6 +112,14 @@ class IncidentController extends Controller
                 ]);
             }
         }
+
+        // Dispatch background job to send notifications
+        SendIncidentNotification::dispatch(
+            $incident,
+            'created',
+            $user->email ?? 'citizen@example.com', // Fallback email
+            $user->name ?? 'Citizen'
+        );
 
         return response()->json([
             'message' => 'Incident created successfully',
@@ -336,6 +346,17 @@ class IncidentController extends Controller
             $message = 'Incident unassigned successfully';
         }
 
+        // Dispatch background job to send assignment notification
+        if ($incident->assigned_agent_id) {
+            $agent = User::find($incident->assigned_agent_id);
+            SendIncidentNotification::dispatch(
+                $incident,
+                'assigned',
+                $agent->email ?? 'agent@example.com',
+                $agent->name ?? 'Agent'
+            );
+        }
+
         return response()->json([
             'message' => $message,
             'incident' => $incident->load(['category', 'citizen', 'assignedAgent'])
@@ -436,6 +457,15 @@ class IncidentController extends Controller
             'old_values' => json_encode(['status' => $oldStatus]),
             'new_values' => json_encode(['status' => $validated['status']])
         ]);
+
+        // Dispatch background job to send status change notification
+        $citizen = User::find($incident->citizen_id);
+        SendIncidentNotification::dispatch(
+            $incident,
+            'status_changed',
+            $citizen->email ?? 'citizen@example.com',
+            $citizen->name ?? 'Citizen'
+        );
 
         return response()->json([
             'message' => 'Incident status updated successfully',
@@ -602,51 +632,18 @@ class IncidentController extends Controller
         ]);
 
         $file = $request->file('csv_file');
-        
-        //parse
-        $csvData = $this->parseCsvFile($file);
-        
-        //process each row and collect results
-        $results = [
-            'success' => 0,
-            'errors' => 0,
-            'error_details' => []
-        ];
+        $filePath = $file->store('temp/csv-imports');
+        $operatorId = $request->user()->id;
+        $importId = uniqid('import_');
 
-        foreach ($csvData as $rowNumber => $row) {
-            try {
-                //validate row
-                $validation = $this->validateCsvRow($row, $rowNumber + 1);
-                if (!$validation['valid']) {
-                    $results['errors']++;
-                    $results['error_details'][] = [
-                        'row' => $rowNumber + 1,
-                        'error' => $validation['error']
-                    ];
-                    continue;
-                }
-
-                //find or create citizen
-                $citizen = $this->findOrCreateCitizen($row['citizen_username']);
-
-                //create incident
-                $this->createIncidentFromRow($row, $citizen);
-                
-                $results['success']++;
-                
-            } catch (\Exception $e) {
-                $results['errors']++;
-                $results['error_details'][] = [
-                    'row' => $rowNumber + 1,
-                    'error' => $e->getMessage()
-                ];
-            }
-        }
+        // Dispatch background job to process CSV
+        ProcessCsvImport::dispatch($filePath, $operatorId, $importId);
 
         return response()->json([
-            'message' => 'CSV import completed',
-            'results' => $results
-        ], 200);
+            'message' => 'CSV import started. You will be notified when processing is complete.',
+            'import_id' => $importId,
+            'status' => 'processing'
+        ], 202); // 202 Accepted - indicates request is being processed asynchronously
     }
 
     /**

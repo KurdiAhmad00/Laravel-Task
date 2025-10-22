@@ -31,6 +31,13 @@ const Configuration = () => {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   
+  // Rate limits state
+  const [rateLimits, setRateLimits] = useState([]);
+  const [rateLimitLoading, setRateLimitLoading] = useState(false);
+  const [editingRateLimit, setEditingRateLimit] = useState(null);
+  const [editingData, setEditingData] = useState({});
+  const [rateLimitSaved, setRateLimitSaved] = useState(false);
+  
   // Category management state
   const [categories, setCategories] = useState([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
@@ -38,9 +45,10 @@ const Configuration = () => {
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [editingCategory, setEditingCategory] = useState(null);
 
-  // Load categories on component mount
+  // Load categories and rate limits on component mount
   useEffect(() => {
     loadCategories();
+    loadRateLimits();
   }, []);
 
   const loadCategories = async () => {
@@ -95,6 +103,83 @@ const Configuration = () => {
       console.error('Error deleting category:', error);
     } finally {
       setCategoryLoading(false);
+    }
+  };
+
+  // Rate limit management functions
+  const loadRateLimits = async () => {
+    setRateLimitLoading(true);
+    try {
+      const response = await adminAPI.getRateLimits();
+      setRateLimits(response.data || []);
+    } catch (error) {
+      console.error('Error loading rate limits:', error);
+      // Show error message to user
+      alert('Failed to load rate limits. Please check console for details.');
+    } finally {
+      setRateLimitLoading(false);
+    }
+  };
+
+  const handleUpdateRateLimit = async (rateLimitId, updatedData) => {
+    setRateLimitLoading(true);
+    try {
+      await adminAPI.updateRateLimit(rateLimitId, updatedData);
+      setEditingRateLimit(null);
+      await loadRateLimits();
+    } catch (error) {
+      console.error('Error updating rate limit:', error);
+    } finally {
+      setRateLimitLoading(false);
+    }
+  };
+
+  const handleResetRateLimit = async (rateLimitId) => {
+    if (!window.confirm('Are you sure you want to reset this rate limit?')) return;
+    
+    setRateLimitLoading(true);
+    try {
+      await adminAPI.resetRateLimit(rateLimitId);
+      await loadRateLimits();
+    } catch (error) {
+      console.error('Error resetting rate limit:', error);
+    } finally {
+      setRateLimitLoading(false);
+    }
+  };
+
+  const startEditing = (rateLimit) => {
+    setEditingRateLimit(rateLimit.id);
+    setEditingData({
+      max_attempts: rateLimit.max_attempts,
+      time_unit: rateLimit.time_unit,
+      time_value: rateLimit.time_value,
+      description: rateLimit.description,
+      is_active: rateLimit.is_active
+    });
+  };
+
+  const cancelEditing = () => {
+    setEditingRateLimit(null);
+    setEditingData({});
+  };
+
+  const saveEditing = async () => {
+    if (!editingRateLimit) return;
+    
+    setRateLimitLoading(true);
+    try {
+      await adminAPI.updateRateLimit(editingRateLimit, editingData);
+      setEditingRateLimit(null);
+      setEditingData({});
+      setRateLimitSaved(true);
+      setTimeout(() => setRateLimitSaved(false), 3000);
+      await loadRateLimits();
+    } catch (error) {
+      console.error('Error updating rate limit:', error);
+      alert('Failed to update rate limit. Please check console for details.');
+    } finally {
+      setRateLimitLoading(false);
     }
   };
 
@@ -160,38 +245,179 @@ const Configuration = () => {
       <div className="config-sections">
         {/* Rate Limits */}
         <div className="config-section">
-          <h3>🚦 Rate Limits</h3>
-          <div className="config-grid">
-            <div className="config-item">
-              <label>API Calls per Hour</label>
-              <input
-                type="number"
-                value={config.rateLimits.apiCalls}
-                onChange={(e) => handleConfigChange('rateLimits', 'apiCalls', parseInt(e.target.value))}
-                min="1"
-                max="10000"
-              />
+          <div className="config-section-header">
+            <h3>🚦 Rate Limits</h3>
+            <div className="header-actions">
+              {rateLimitSaved && (
+                <div className="save-success">
+                  <span className="success-icon">✅</span>
+                  Rate limit updated successfully!
+                </div>
+              )}
+              <button 
+                className="refresh-btn"
+                onClick={loadRateLimits}
+                disabled={rateLimitLoading}
+                title="Refresh rate limits"
+              >
+                {rateLimitLoading ? '⏳' : 'Refresh'} 
+              </button>
             </div>
-            <div className="config-item">
-              <label>File Uploads per Hour</label>
-              <input
-                type="number"
-                value={config.rateLimits.fileUploads}
-                onChange={(e) => handleConfigChange('rateLimits', 'fileUploads', parseInt(e.target.value))}
-                min="1"
-                max="100"
-              />
-            </div>
-            <div className="config-item">
-              <label>Login Attempts per Hour</label>
-              <input
-                type="number"
-                value={config.rateLimits.loginAttempts}
-                onChange={(e) => handleConfigChange('rateLimits', 'loginAttempts', parseInt(e.target.value))}
-                min="1"
-                max="20"
-              />
-            </div>
+          </div>
+          <div className="rate-limits-management">
+            {rateLimitLoading ? (
+              <div className="loading">Loading rate limits...</div>
+            ) : rateLimits.length === 0 ? (
+              <div className="no-rate-limits">
+                <p>No rate limits found. Please check the console for errors.</p>
+                <button 
+                  className="retry-btn"
+                  onClick={loadRateLimits}
+                >
+                  Retry Loading
+                </button>
+              </div>
+            ) : (
+              <div className="rate-limits-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Max Attempts</th>
+                      <th>Time Unit</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rateLimits.map((rateLimit) => (
+                      <tr key={rateLimit.id}>
+                        <td>
+                          <div className="rate-limit-name">
+                            <strong>{rateLimit.name}</strong>
+                            {rateLimit.description && (
+                              <small>{rateLimit.description}</small>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          {editingRateLimit === rateLimit.id ? (
+                            <input
+                              type="number"
+                              value={editingData.max_attempts}
+                              min="1"
+                              max="10000"
+                              onChange={(e) => setEditingData(prev => ({
+                                ...prev,
+                                max_attempts: parseInt(e.target.value) || 1
+                              }))}
+                              autoFocus
+                            />
+                          ) : (
+                            <span>{rateLimit.max_attempts}</span>
+                          )}
+                        </td>
+                        <td>
+                          {editingRateLimit === rateLimit.id ? (
+                            <select
+                              defaultValue={rateLimit.time_unit}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              onFocus={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const newTimeUnit = e.target.value;
+                                let newTimeValue = rateLimit.time_value;
+                                
+                                // Convert time value based on new unit
+                                if (rateLimit.time_unit === 'hour' && newTimeUnit === 'minute') {
+                                  newTimeValue = rateLimit.time_value * 60;
+                                } else if (rateLimit.time_unit === 'minute' && newTimeUnit === 'hour') {
+                                  newTimeValue = Math.round(rateLimit.time_value / 60);
+                                } else if (rateLimit.time_unit === 'day' && newTimeUnit === 'hour') {
+                                  newTimeValue = rateLimit.time_value / 24;
+                                } else if (rateLimit.time_unit === 'hour' && newTimeUnit === 'day') {
+                                  newTimeValue = rateLimit.time_value * 24;
+                                }
+                                
+                                handleUpdateRateLimit(rateLimit.id, { 
+                                  max_attempts: rateLimit.max_attempts,
+                                  time_unit: newTimeUnit,
+                                  time_value: newTimeValue,
+                                  description: rateLimit.description,
+                                  is_active: rateLimit.is_active
+                                });
+                              }}
+                            >
+                              <option value="minute">Minute</option>
+                              <option value="hour">Hour</option>
+                              <option value="day">Day</option>
+                            </select>
+                          ) : (
+                            <span className="time-unit">{rateLimit.time_unit}</span>
+                          )}
+                        </td>
+                        
+                        <td>
+                          {editingRateLimit === rateLimit.id ? (
+                            <select
+                              value={editingData.is_active ? 'active' : 'inactive'}
+                              onChange={(e) => setEditingData(prev => ({
+                                ...prev,
+                                is_active: e.target.value === 'active'
+                              }))}
+                            >
+                              <option value="active">Active</option>
+                              <option value="inactive">Inactive</option>
+                            </select>
+                          ) : (
+                            <span className={`status ${rateLimit.is_active ? 'active' : 'inactive'}`}>
+                              {rateLimit.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="rate-limit-actions">
+                            {editingRateLimit === rateLimit.id ? (
+                              <>
+                                <button 
+                                  className="save-btn small"
+                                  onClick={saveEditing}
+                                  disabled={rateLimitLoading}
+                                >
+                                  {rateLimitLoading ? '⏳' : '💾'} Save
+                                </button>
+                                <button 
+                                  className="cancel-btn small"
+                                  onClick={cancelEditing}
+                                >
+                                  ❌ Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button 
+                                  className="edit-btn"
+                                  onClick={() => startEditing(rateLimit)}
+                                  title="Click to edit this rate limit"
+                                >
+                                  Edit
+                                </button>
+                                <button 
+                                  className="reset-btn"
+                                  onClick={() => handleResetRateLimit(rateLimit.id)}
+                                  title="Reset this rate limit"
+                                >
+                                  Reset
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 

@@ -23,5 +23,8 @@ class DatabaseSeeder extends Seeder
         
         // Create sample audit logs
         $this->call(\Database\Seeders\AuditLogSeeder::class);
+        
+        // Create rate limits
+        $this->call(\Database\Seeders\RateLimitSeeder::class);
     }
 }

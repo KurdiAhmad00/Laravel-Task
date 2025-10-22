@@ -95,6 +95,10 @@ export const adminAPI = {
   createCategory: (categoryData) => api.post('/categories', categoryData),
   updateCategory: (id, data) => api.put(`/categories/${id}`, data),
   deleteCategory: (id) => api.delete(`/categories/${id}`),
+//Rate Limits API calls
+  getRateLimits: () => api.get('/rate-limits'),
+  updateRateLimit: (id, data) => api.put(`/rate-limits/${id}`, data),
+  resetRateLimit: (id) => api.post(`/rate-limits/${id}/reset`),
 };
 
 // Get Categories API calls

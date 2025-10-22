@@ -236,6 +236,221 @@
   }
 }
 
+/* Rate Limits Management */
+.config-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.config-section-header h3 {
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.save-success {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #059669;
+  font-size: 12px;
+  font-weight: 500;
+  background: #D1FAE5;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #A7F3D0;
+}
+
+.refresh-btn {
+  padding: 6px 12px;
+  background: #F3F4F6;
+  color: #374151;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #E5E7EB;
+  border-color: #9CA3AF;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rate-limits-management {
+  margin-top: 16px;
+}
+
+.no-rate-limits {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6B7280;
+}
+
+.no-rate-limits p {
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.retry-btn {
+  padding: 8px 16px;
+  background: #EF4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+
+.retry-btn:hover {
+  background: #DC2626;
+}
+
+.rate-limits-table {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.rate-limits-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.rate-limits-table th {
+  background: #F9FAFB;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #E5E7EB;
+  font-size: 14px;
+}
+
+.rate-limits-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F3F4F6;
+  vertical-align: middle;
+}
+
+.rate-limits-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rate-limit-name strong {
+  display: block;
+  color: #111827;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.rate-limit-name small {
+  color: #6B7280;
+  font-size: 12px;
+}
+
+.rate-limits-table input[type="number"] {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.rate-limits-table select {
+  padding: 6px 8px;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.time-unit {
+  color: #6B7280;
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status.active {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.status.inactive {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.rate-limit-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rate-limit-actions button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-right: 8px;
+}
+
+.edit-btn {
+  background: #3B82F6;
+  color: white;
+}
+
+.edit-btn:hover {
+  background: #2563EB;
+  transform: translateY(-1px);
+}
+
+.reset-btn {
+  background: #F59E0B;
+  color: white;
+}
+
+.reset-btn:hover {
+  background: #D97706;
+  transform: translateY(-1px);
+}
+
+.cancel-btn {
+  background: #6B7280;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background: #4B5563;
+  transform: translateY(-1px);
+}
+
 /* Category Management */
 .category-management {
   margin-top: 16px;

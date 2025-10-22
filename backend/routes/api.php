@@ -8,7 +8,7 @@ use App\Http\Controllers\Api\AdminController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -18,13 +18,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);
-        Route::post('/incidents', [IncidentController::class, 'store']);
+        Route::post('/incidents', [IncidentController::class, 'store'])->middleware('throttle:incident-creation');
         Route::put('/incidents/{incident}', [IncidentController::class, 'update']);
         Route::delete('/incidents/{incident}', [IncidentController::class, 'destroy']);
         Route::delete('/my-incidents', [IncidentController::class, 'deleteAll']); 
         
         // File attachments
-        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment']);
+        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment'])->middleware('throttle:file-upload');
         Route::get('/incidents/{incident}/attachments', [IncidentController::class, 'getAttachments']);
         Route::delete('/attachments/{attachment}', [IncidentController::class, 'DeleteAttachment']);
     });
@@ -43,7 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/audit-logs/{incident}', [AdminController::class, 'getIncidentAuditLogs']);
         
         // CSV import for operators
-        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv']);
+        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv'])->middleware('throttle:csv-import');
     });
     
     // Agent routes 
@@ -63,6 +63,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/categories', [AdminController::class, 'createCategory']);
         Route::put('/categories/{category}', [AdminController::class, 'updateCategory']);
         Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory']);
+
+        // Background job management
+        Route::post('/reports/generate', [AdminController::class, 'generateReport']);
+        Route::get('/reports/status/{reportType}', [AdminController::class, 'getReportStatus']);
+        Route::get('/reports/download/{reportType}', [AdminController::class, 'downloadReport']);
+        Route::post('/cleanup/start', [AdminController::class, 'startCleanup']);
+        Route::get('/imports/status/{importId}', [AdminController::class, 'getImportStatus']);
+        
+        // Rate limit management
+        Route::get('/rate-limits', [AdminController::class, 'getRateLimits']);
+        Route::put('/rate-limits/{id}', [AdminController::class, 'updateRateLimit']);
+        Route::post('/rate-limits/{id}/reset', [AdminController::class, 'resetRateLimit']);
 
     });
 });

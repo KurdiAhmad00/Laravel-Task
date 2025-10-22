@@ -7,7 +7,10 @@ use App\Models\User;
 use App\Models\Category;
 use App\Models\AuditLog;
 use App\Models\Incident;
+use App\Models\RateLimit;
 use Illuminate\Http\Request;
+use App\Jobs\GenerateSystemReport;
+use App\Jobs\CleanupOldData;
 
 class AdminController extends Controller
 {
@@ -398,4 +401,161 @@ class AdminController extends Controller
             'old_values' => $oldValues ? json_encode($oldValues) : null,
             'new_values' => $newValues ? json_encode($newValues) : null,
         ]);
-    }}
+    }
+
+    /**
+     * Generate system report (admin only)
+     */
+    public function generateReport(Request $request)
+    {
+        $validated = $request->validate([
+            'report_type' => 'required|in:incidents,users,audit,system',
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from'
+        ]);
+
+        $adminId = $request->user()->id;
+
+        // Dispatch background job to generate report
+        GenerateSystemReport::dispatch(
+            $validated['report_type'],
+            $validated['date_from'],
+            $validated['date_to'],
+            $adminId
+        );
+
+        return response()->json([
+            'message' => 'Report generation started. You will be notified when it\'s ready.',
+            'report_type' => $validated['report_type'],
+            'status' => 'processing'
+        ], 202);
+    }
+
+    /**
+     * Get report status and download link (admin only)
+     */
+    public function getReportStatus(Request $request, $reportType)
+    {
+        $adminId = $request->user()->id;
+        $cacheKey = "system_report_{$adminId}_{$reportType}";
+        
+        $reportData = cache()->get($cacheKey);
+        
+        if (!$reportData) {
+            return response()->json([
+                'message' => 'Report not found or expired',
+                'status' => 'not_found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'ready',
+            'report_type' => $reportData['type'],
+            'generated_at' => $reportData['generated_at'],
+            'download_url' => url("/api/admin/reports/download/{$reportType}")
+        ]);
+    }
+
+    /**
+     * Download generated report (admin only)
+     */
+    public function downloadReport(Request $request, $reportType)
+    {
+        $adminId = $request->user()->id;
+        $cacheKey = "system_report_{$adminId}_{$reportType}";
+        
+        $reportData = cache()->get($cacheKey);
+        
+        if (!$reportData) {
+            return response()->json([
+                'message' => 'Report not found or expired'
+            ], 404);
+        }
+
+        $filePath = $reportData['path'];
+        
+        if (!\Storage::exists($filePath)) {
+            return response()->json([
+                'message' => 'Report file not found'
+            ], 404);
+        }
+
+        return \Storage::download($filePath, "report_{$reportType}_" . now()->format('Y_m_d_H_i_s') . '.json');
+    }
+
+    /**
+     * Start data cleanup (admin only)
+     */
+    public function startCleanup(Request $request)
+    {
+        $validated = $request->validate([
+            'cleanup_type' => 'required|in:audit_logs,old_incidents,temp_files,all',
+            'retention_days' => 'integer|min:1|max:365'
+        ]);
+
+        $retentionDays = $validated['retention_days'] ?? 90;
+
+        // Dispatch background job to cleanup data
+        CleanupOldData::dispatch($validated['cleanup_type'], $retentionDays);
+
+        return response()->json([
+            'message' => 'Data cleanup started',
+            'cleanup_type' => $validated['cleanup_type'],
+            'retention_days' => $retentionDays,
+            'status' => 'processing'
+        ], 202);
+    }
+
+    /**
+     * Get CSV import status (admin/operator only)
+     */
+    public function getImportStatus(Request $request, $importId)
+    {
+        $cacheKey = "csv_import_results_{$importId}";
+        $results = cache()->get($cacheKey);
+        
+        if (!$results) {
+            return response()->json([
+                'message' => 'Import not found or expired',
+                'status' => 'not_found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'completed',
+            'results' => $results
+        ]);
+    }
+    public function getRateLimits()
+    {
+        return response()->json(RateLimit::all());
+    }
+    public function updateRateLimit(Request $request, $id) 
+    {
+        $rateLimit = RateLimit::findOrFail($id);
+        $validatedData = $request->validate([
+            'max_attempts' => 'required|integer|min:1',
+            'time_unit' => 'required|string|in:minute,hour,day',
+            'time_value' => 'required|integer|min:1',
+            'description' => 'nullable|string',
+            'is_active' => 'nullable|boolean'
+        ]);
+        
+        // If is_active is not provided, keep the current value
+        if (!isset($validatedData['is_active'])) {
+            $validatedData['is_active'] = $rateLimit->is_active;
+        }
+        
+        $rateLimit->update($validatedData);
+        return response()->json($rateLimit);
+    }
+
+    public function resetRateLimit($id)
+    {
+        $rateLimit = RateLimit::findOrFail($id);
+        $rateLimit->update(['is_active' => false]);
+        //Clear existing rate limit cache
+        RateLimiter::clear($rateLimit ->name);
+        return response()->json(['message' => 'Rate limit reset']);
+    }
+}
