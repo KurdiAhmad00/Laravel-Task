@@ -9,9 +9,9 @@ use App\Http\Controllers\Api\NotificationController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('categories', [IncidentController::class, 'getCategories']);
     Route::get('/incidents/{incident}', [IncidentController::class, 'show']);
@@ -27,13 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);
-        Route::post('/incidents', [IncidentController::class, 'store']);
+        Route::post('/incidents', [IncidentController::class, 'store'])->middleware('throttle:incident-creation');
         Route::put('/incidents/{incident}', [IncidentController::class, 'update']);
         Route::delete('/incidents/{incident}', [IncidentController::class, 'destroy']);
         Route::delete('/my-incidents', [IncidentController::class, 'deleteAll']); 
         
         // File attachments
-        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment']);
+        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment'])->middleware('throttle:file-upload');
         Route::get('/incidents/{incident}/attachments', [IncidentController::class, 'getAttachments']);
         Route::delete('/attachments/{attachment}', [IncidentController::class, 'DeleteAttachment']);
     });
@@ -52,7 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/audit-logs/{incident}', [AdminController::class, 'getIncidentAuditLogs']);
         
         // CSV import for operators
-        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv']);
+        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv'])->middleware('throttle:csv-import');
         Route::get('/imports/progress/{importId}', [IncidentController::class, 'getImportProgress']);
     });
     

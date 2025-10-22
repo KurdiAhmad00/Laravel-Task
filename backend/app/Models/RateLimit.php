@@ -22,16 +22,16 @@ class RateLimit extends Model
             return null;
         }
         
-        // Convert time_value (minutes) to appropriate Laravel Limit method
+        // Convert time_value to appropriate Laravel Limit method
         switch ($rateLimit->time_unit) {
             case 'minute':
-                return Limit::perMinute($rateLimit->time_value)->by($rateLimit->max_attempts);
+                return Limit::perMinutes($rateLimit->time_value, $rateLimit->max_attempts);
             case 'hour':
-                return Limit::perHour($rateLimit->time_value / 60)->by($rateLimit->max_attempts);
+                return Limit::perMinutes($rateLimit->time_value * 60, $rateLimit->max_attempts);
             case 'day':
-                return Limit::perDay($rateLimit->time_value / 1440)->by($rateLimit->max_attempts);
+                return Limit::perMinutes($rateLimit->time_value * 1440, $rateLimit->max_attempts);
             default:
-                return Limit::perHour(1)->by($rateLimit->max_attempts);
+                return Limit::perHour($rateLimit->max_attempts);
         }
     }
 }
