@@ -421,8 +421,7 @@ const Configuration = () => {
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="config-section">
+        {/* <div className="config-section">
           <h3>🔔 Notifications</h3>
           <div className="config-grid">
             <div className="config-item checkbox">
@@ -468,7 +467,6 @@ const Configuration = () => {
           </div>
         </div>
 
-        {/* Security */}
         <div className="config-section">
           <h3>🔒 Security</h3>
           <div className="config-grid">
@@ -505,7 +503,6 @@ const Configuration = () => {
           </div>
         </div>
 
-        {/* System */}
         <div className="config-section">
           <h3>⚙️ System</h3>
           <div className="config-grid">
@@ -552,7 +549,7 @@ const Configuration = () => {
               />
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Category Management */}
         <div className="config-section">
