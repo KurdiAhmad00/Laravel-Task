@@ -17,7 +17,7 @@ class NotificationController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
         $perPage = $request->get('per_page', 15);
         
         $notifications = Notification::where('user_id', $user->id)
@@ -30,9 +30,9 @@ class NotificationController extends Controller
     /**
      * Get unread notifications count.
      */
-    public function unreadCount(): JsonResponse
+    public function unreadCount(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
         $count = Notification::where('user_id', $user->id)
             ->unread()
             ->count();
@@ -43,9 +43,9 @@ class NotificationController extends Controller
     /**
      * Mark a notification as read.
      */
-    public function markAsRead($id): JsonResponse
+    public function markAsRead(Request $request, $id): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
         $notification = Notification::where('user_id', $user->id)
             ->where('id', $id)
             ->first();
@@ -62,9 +62,9 @@ class NotificationController extends Controller
     /**
      * Mark all notifications as read.
      */
-    public function markAllAsRead(): JsonResponse
+    public function markAllAsRead(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
         Notification::where('user_id', $user->id)
             ->unread()
             ->update(['read_at' => now()]);
@@ -75,9 +75,9 @@ class NotificationController extends Controller
     /**
      * Clear all notifications for the user.
      */
-    public function clearAll(): JsonResponse
+    public function clearAll(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
         $deleted = Notification::clearAllForUser($user->id);
         
         return response()->json([
@@ -89,9 +89,9 @@ class NotificationController extends Controller
     /**
      * Clear only read notifications for the user.
      */
-    public function clearRead(): JsonResponse
+    public function clearRead(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
         $deleted = Notification::clearReadForUser($user->id);
         
         return response()->json([
