@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use App\Models\Category;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class IncidentController extends Controller
 {
@@ -587,5 +589,185 @@ class IncidentController extends Controller
         }
 
         return Storage::disk('public')->download($attachment->storage_key, $attachment->filename);
+    }
+
+    /**
+     * Import incidents from CSV file (operators/admins only)
+     */
+    public function importCsv(Request $request)
+    {
+        // Validate the uploaded file
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:10240' 
+        ]);
+
+        $file = $request->file('csv_file');
+        
+        //parse
+        $csvData = $this->parseCsvFile($file);
+        
+        //process each row and collect results
+        $results = [
+            'success' => 0,
+            'errors' => 0,
+            'error_details' => []
+        ];
+
+        foreach ($csvData as $rowNumber => $row) {
+            try {
+                //validate row
+                $validation = $this->validateCsvRow($row, $rowNumber + 1);
+                if (!$validation['valid']) {
+                    $results['errors']++;
+                    $results['error_details'][] = [
+                        'row' => $rowNumber + 1,
+                        'error' => $validation['error']
+                    ];
+                    continue;
+                }
+
+                //find or create citizen
+                $citizen = $this->findOrCreateCitizen($row['citizen_username']);
+
+                //create incident
+                $this->createIncidentFromRow($row, $citizen);
+                
+                $results['success']++;
+                
+            } catch (\Exception $e) {
+                $results['errors']++;
+                $results['error_details'][] = [
+                    'row' => $rowNumber + 1,
+                    'error' => $e->getMessage()
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => 'CSV import completed',
+            'results' => $results
+        ], 200);
+    }
+
+    /**
+     * parse CSV file and return array of rows
+     */
+    private function parseCsvFile($file)
+    {
+        $csvData = [];
+        $handle = fopen($file->getPathname(), 'r');
+        
+        // Skip header row
+        $header = fgetcsv($handle);
+        
+        while (($row = fgetcsv($handle)) !== false) {
+            $csvData[] = [
+                'title' => $row[0] ?? '',
+                'description' => $row[1] ?? '',
+                'category_id' => $row[2] ?? '',
+                'latitude' => $row[3] ?? '',
+                'longitude' => $row[4] ?? '',
+                'citizen_username' => $row[5] ?? '',
+                'priority' => $row[6] ?? 'medium',
+                'status' => $row[7] ?? 'new'
+            ];
+        }
+        
+        fclose($handle);
+        return $csvData;
+    }
+
+    /**
+     * validate a single CSV row
+     */
+    private function validateCsvRow($row, $rowNumber)
+    {
+        //check required fields
+        if (empty($row['title'])) {
+            return ['valid' => false, 'error' => 'Title is required'];
+        }
+        
+        if (empty($row['description'])) {
+            return ['valid' => false, 'error' => 'Description is required'];
+        }
+        
+        if (empty($row['category_id']) || !is_numeric($row['category_id'])) {
+            return ['valid' => false, 'error' => 'Valid category_id is required'];
+        }
+        
+        if (empty($row['latitude']) || !is_numeric($row['latitude'])) {
+            return ['valid' => false, 'error' => 'Valid latitude is required'];
+        }
+        
+        if (empty($row['longitude']) || !is_numeric($row['longitude'])) {
+            return ['valid' => false, 'error' => 'Valid longitude is required'];
+        }
+        
+        if (empty($row['citizen_username'])) {
+            return ['valid' => false, 'error' => 'Citizen username is required'];
+        }
+        
+        //validate category exists
+        $category = Category::find($row['category_id']);
+        if (!$category) {
+            return ['valid' => false, 'error' => "Category ID {$row['category_id']} does not exist"];
+        }
+        
+        //validate priority
+        $validPriorities = ['low', 'medium', 'high'];
+        if (!in_array($row['priority'], $validPriorities)) {
+            return ['valid' => false, 'error' => "Invalid priority. Must be: " . implode(', ', $validPriorities)];
+        }
+        
+        //validate status
+        $validStatuses = ['new', 'in_progress', 'resolved', 'closed'];
+        if (!in_array($row['status'], $validStatuses)) {
+            return ['valid' => false, 'error' => "Invalid status. Must be: " . implode(', ', $validStatuses)];
+        }
+        
+        return ['valid' => true];
+    }
+
+    /**
+     * find existing citizen or create new one
+     */
+    private function findOrCreateCitizen($username)
+    {
+        //first try to find by username (name field)
+        $citizen = User::where('name', $username)->where('role', 'citizen')->first();
+        
+        if ($citizen) {
+            return $citizen;
+        }
+        
+        //create new citizen account
+        $citizen = User::create([
+            'name' => $username,
+            'email' => null, // No email for CSV-imported users
+            'password' => null, // No password for CSV-imported users
+            'role' => 'citizen',
+            'status' => 'active'
+        ]);
+        
+        return $citizen;
+    }
+
+    /**
+     * create incident from CSV row data
+     */
+    private function createIncidentFromRow($row, $citizen)
+    {
+        $incident = Incident::create([
+            'title' => $row['title'],
+            'description' => $row['description'],
+            'category_id' => $row['category_id'],
+            'location_lat' => $row['latitude'],
+            'location_lng' => $row['longitude'],
+            'citizen_id' => $citizen->id,
+            'priority' => $row['priority'],
+            'status' => $row['status']
+        ]);
+        
+        return $incident;
     }
 }

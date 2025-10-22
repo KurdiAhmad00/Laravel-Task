@@ -4,6 +4,7 @@ import ViewIncidentModal from '../modals/ViewIncidentModal';
 import PriorityModal from '../modals/PriorityModal';
 import AssignAgentModal from '../modals/AssignAgentModal';
 import AuditLogModal from '../modals/AuditLogModal';
+import ImportCSVModal from '../modals/ImportCSVModal';
 import './OperatorDashboard.css';
 
 const formatDate = (iso) => new Date(iso).toLocaleDateString();
@@ -185,6 +186,14 @@ const OperatorDashboard = () => {
 
   const handleImport = () => {
     setImportModal({ visible: true });
+  };
+
+  const handleImportComplete = (results) => {
+    // Refresh the incidents list after successful import
+    loadIncidents(pagination.currentPage);
+    
+    // Optional: Show a success message
+    console.log(`Import completed: ${results.success} incidents imported`);
   };
 
   const handleFilterChange = (filterType, value) => {
@@ -425,6 +434,11 @@ const OperatorDashboard = () => {
 
       {/* TODO: Add other modals */}
       {/* ImportModal */}
+      <ImportCSVModal
+        isOpen={importModal.visible}
+        onClose={() => setImportModal({ visible: false })}
+        onImportComplete={handleImportComplete}
+      />
     </div>
   );
 };

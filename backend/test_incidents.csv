@@ -1,0 +1,6 @@
+title,description,category_id,latitude,longitude,citizen_username,priority,status
+"Street light not working","Light at Main St and 1st Ave is completely out",1,40.7128,-74.0060,"john_doe","high","new"
+"Pothole on Oak Street","Large pothole causing traffic issues",2,40.7589,-73.9851,"jane_smith","medium","new"
+"Water leak in park","Water fountain leaking heavily",3,40.7831,-73.9712,"bob_wilson","low","new"
+"Broken traffic sign","Stop sign is bent and hard to read",4,40.7505,-73.9934,"alice_jones","medium","new"
+"Garbage can overflowing","Trash bin is full and spilling over",5,40.7614,-73.9776,"charlie_brown","low","new"

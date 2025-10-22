@@ -103,4 +103,16 @@ export const categoriesAPI = {
   getCategories: () => api.get('/categories'), // Alias for consistency
 };
 
+// Import CSV API calls
+export const importCSVAPI = {
+  importCSV: (csvFile) => {
+    const formData = new FormData();
+    formData.append('csv_file', csvFile);
+    return api.post('/incidents/import-csv', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  // getImportResults: () => api.get('/incidents/import-csv/results'),
+};
+
 export default api;

@@ -41,6 +41,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Audit logs for operators
         Route::get('/audit-logs', [AdminController::class, 'getAuditLogs']);
         Route::get('/audit-logs/{incident}', [AdminController::class, 'getIncidentAuditLogs']);
+        
+        // CSV import for operators
+        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv']);
     });
     
     // Agent routes 
