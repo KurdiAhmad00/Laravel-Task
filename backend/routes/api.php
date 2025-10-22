@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\NotificationController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -27,13 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);
-        Route::post('/incidents', [IncidentController::class, 'store'])->middleware('throttle:incident-creation');
+        Route::post('/incidents', [IncidentController::class, 'store']);
         Route::put('/incidents/{incident}', [IncidentController::class, 'update']);
         Route::delete('/incidents/{incident}', [IncidentController::class, 'destroy']);
         Route::delete('/my-incidents', [IncidentController::class, 'deleteAll']); 
         
         // File attachments
-        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment'])->middleware('throttle:file-upload');
+        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment']);
         Route::get('/incidents/{incident}/attachments', [IncidentController::class, 'getAttachments']);
         Route::delete('/attachments/{attachment}', [IncidentController::class, 'DeleteAttachment']);
     });
@@ -52,7 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/audit-logs/{incident}', [AdminController::class, 'getIncidentAuditLogs']);
         
         // CSV import for operators
-        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv'])->middleware('throttle:csv-import');
+        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv']);
         Route::get('/imports/progress/{importId}', [IncidentController::class, 'getImportProgress']);
     });
     

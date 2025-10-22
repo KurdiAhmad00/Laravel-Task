@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\SendIncidentNotification;
 use App\Jobs\ProcessCsvImport;
+use App\Services\NotificationService;
 
 class IncidentController extends Controller
 {
@@ -113,6 +114,12 @@ class IncidentController extends Controller
             }
         }
 
+        // Notify citizen about incident creation
+        NotificationService::notifyCitizenIncidentCreated($incident);
+
+        // Notify operators about new incident
+        NotificationService::notifyOperatorNewIncident($incident);
+
         // Dispatch background job to send notifications
         SendIncidentNotification::dispatch(
             $incident,
@@ -188,19 +195,44 @@ class IncidentController extends Controller
     public function deleteAll(Request $request)
     {
         $user = $request->user();
+        $deletedCount = 0;
         
         try {
-            DB::transaction(function () use ($user) {
-                $incidents = $user->reportedIncidents()->with('attachments')->get();
+            DB::transaction(function () use ($user, &$deletedCount) {
+                // Get all incidents for this user first (for debugging)
+                $allIncidents = $user->reportedIncidents()->get();
+                \Log::info("User {$user->id} has {$allIncidents->count()} total incidents");
+                
+                // Log all statuses
+                foreach ($allIncidents as $incident) {
+                    \Log::info("Incident {$incident->id}: status = '{$incident->status}'");
+                }
+                
+                // Only get incidents with "New" status
+                $incidents = $user->reportedIncidents()
+                    ->where('status', 'New')
+                    ->with(['attachments', 'notes'])
+                    ->get();
+                
+                // Debug: Log the count of incidents found
+                \Log::info("Found {$incidents->count()} incidents with 'New' status for user {$user->id}");
                 
                 foreach ($incidents as $incident) {
+                    // Delete attachments and their files
                     foreach ($incident->attachments as $attachment) {
                         Storage::disk('public')->delete($attachment->storage_key);
                         $attachment->delete();
                     }
                     
+                    // Delete incident notes
+                    $incident->notes()->delete();
+                    
+                    // Delete audit logs related to this incident
+                    \App\Models\AuditLog::where('incident_id', $incident->id)->delete();
+                    
+                    // Create audit log for the deletion
                     \App\Models\AuditLog::create([
-                        'incident_id' => $incident->id,
+                        'incident_id' => null, // Set to null since we're deleting the incident
                         'actor_id' => $user->id,
                         'action' => 'deleted',
                         'entity_type' => 'incident',
@@ -214,12 +246,15 @@ class IncidentController extends Controller
                         'new_values' => null
                     ]);
                     
+                    // Finally delete the incident
                     $incident->delete();
+                    $deletedCount++;
                 }
             });
             
             return response()->json([
-                'message' => 'All incidents deleted successfully'
+                'message' => "Successfully deleted {$deletedCount} incidents with 'new' status. Incidents with other statuses cannot be deleted.",
+                'deleted_count' => $deletedCount
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -316,6 +351,9 @@ class IncidentController extends Controller
                 ])
             ]);
 
+            // Notify citizen about status change from New to Assigned
+            NotificationService::notifyCitizenStatusChange($incident, $oldStatus, 'Assigned');
+
             $message = 'Incident assigned successfully';
         } else {
 
@@ -343,7 +381,19 @@ class IncidentController extends Controller
                 ])
             ]);
 
+            // Notify citizen about status change back to New
+            NotificationService::notifyCitizenStatusChange($incident, $oldStatus, 'New');
+
             $message = 'Incident unassigned successfully';
+        }
+
+        // Notify agent about assignment
+        if ($incident->assigned_agent_id) {
+            $agent = User::find($incident->assigned_agent_id);
+            NotificationService::notifyAgentAssignment($incident, $agent);
+            
+            // Notify operator about assignment
+            NotificationService::notifyOperatorIncidentAssigned($incident, $user, $agent);
         }
 
         // Dispatch background job to send assignment notification
@@ -383,6 +433,9 @@ class IncidentController extends Controller
             'old_values' => json_encode(['priority' => $oldPriority]),
             'new_values' => json_encode(['priority' => $validated['priority']])
         ]);
+
+        // Notify operators about priority change
+        NotificationService::notifyOperatorPriorityChange($incident, $oldPriority, $validated['priority']);
 
         return response()->json([
             'message' => 'Incident priority updated successfully',
@@ -457,6 +510,12 @@ class IncidentController extends Controller
             'old_values' => json_encode(['status' => $oldStatus]),
             'new_values' => json_encode(['status' => $validated['status']])
         ]);
+
+        // Notify citizen about status change
+        NotificationService::notifyCitizenStatusChange($incident, $oldStatus, $validated['status']);
+
+        // Notify agent about their update
+        NotificationService::notifyAgentIncidentUpdated($incident, $user, "status changed to {$validated['status']}");
 
         // Dispatch background job to send status change notification
         $citizen = User::find($incident->citizen_id);

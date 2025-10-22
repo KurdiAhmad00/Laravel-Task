@@ -102,7 +102,7 @@ class ProcessCsvImport implements ShouldQueue
             $results['total']++;
             
             // Update every 100 rows
-            if ($results['total'] % 100 === 0) {
+            if ($results['total'] % 1000 === 0) {
                 $this->updateProgress($results);
             }
 

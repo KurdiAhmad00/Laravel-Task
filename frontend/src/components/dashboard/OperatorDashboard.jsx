@@ -5,6 +5,7 @@ import PriorityModal from '../modals/PriorityModal';
 import AssignAgentModal from '../modals/AssignAgentModal';
 import AuditLogModal from '../modals/AuditLogModal';
 import ImportCSVModal from '../modals/ImportCSVModal';
+import NotificationButton from '../NotificationButton';
 import './OperatorDashboard.css';
 
 const formatDate = (iso) => new Date(iso).toLocaleDateString();
@@ -94,6 +95,9 @@ const OperatorDashboard = () => {
   const [categories, setCategories] = useState([]);
   const [agents, setAgents] = useState([]);
   
+  // Notification refresh trigger
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
   // Prevent duplicate API calls with ref
   const hasLoadedRef = useRef(false);
 
@@ -153,6 +157,8 @@ const OperatorDashboard = () => {
         loadCategories(),
         loadAgents()
       ]);
+      // Trigger notification refresh on initial load
+      setRefreshTrigger(prev => prev + 1);
     };
     
     loadData();
@@ -169,6 +175,8 @@ const OperatorDashboard = () => {
   const handleAssignmentUpdated = () => {
     // Refresh the incidents list after assignment update
     loadIncidents(pagination.currentPage);
+    // Trigger notification refresh when incident is assigned
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handlePriority = (incidentId) => {
@@ -178,6 +186,8 @@ const OperatorDashboard = () => {
   const handlePriorityUpdated = () => {
     // Refresh the incidents list after priority update
     loadIncidents(1);
+    // Trigger notification refresh when priority is updated
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleAudit = (incidentId) => {
@@ -191,6 +201,8 @@ const OperatorDashboard = () => {
   const handleImportComplete = (results) => {
     // Refresh the incidents list after successful import
     loadIncidents(pagination.currentPage);
+    // Trigger notification refresh when incidents are imported
+    setRefreshTrigger(prev => prev + 1);
     
     // Optional: Show a success message
     console.log(`Import completed: ${results.success} incidents imported`);
@@ -217,7 +229,10 @@ const OperatorDashboard = () => {
   return (
     <div>
       <div className="dashboard-header-row">
-        <h2 className="dashboard-title">All Incidents</h2>
+        <div className="dashboard-title-section">
+          <h2 className="dashboard-title">All Incidents</h2>
+          <NotificationButton role="operator" theme={{ accent: '#8B5CF6' }} refreshTrigger={refreshTrigger} />
+        </div>
         <button className="import-btn" onClick={handleImport}>
           Import CSV
         </button>

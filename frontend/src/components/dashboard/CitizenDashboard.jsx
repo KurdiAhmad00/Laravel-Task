@@ -3,6 +3,7 @@ import { incidentAPI } from '../../services/api';
 import ReportIncidentModal from '../modals/ReportIncidentModal';
 import ViewIncidentModal from '../modals/ViewIncidentModal';
 import EditIncidentModal from '../modals/EditIncidentModal';
+import NotificationButton from '../NotificationButton';
 
 const formatDate = (iso) => new Date(iso).toLocaleDateString();
 
@@ -32,6 +33,7 @@ const CitizenDashboard = () => {
   const [confirmDeleteAll, setConfirmDeleteAll] = useState({ visible: false });
   const [editModal, setEditModal] = useState({ visible: false, incidentId: null });
   const [viewModal, setViewModal] = useState({ visible: false, incidentId: null });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [pagination, setPagination] = useState({
     currentPage: 1,
     lastPage: 1,
@@ -58,6 +60,8 @@ const CitizenDashboard = () => {
       await incidentAPI.deleteIncident(incidentId);
       // Refresh current page after deletion
       loadIncidents(pagination.currentPage);
+      // Trigger notification refresh
+      setRefreshTrigger(prev => prev + 1);
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to delete incident');
     } finally {
@@ -80,6 +84,8 @@ const CitizenDashboard = () => {
       await incidentAPI.deleteAllIncidents();
       // Refresh the list - go to page 1
       loadIncidents(1);
+      // Trigger notification refresh
+      setRefreshTrigger(prev => prev + 1);
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to delete all incidents');
     }
@@ -145,6 +151,8 @@ const CitizenDashboard = () => {
 
   useEffect(() => {
     loadIncidents(1);
+    // Trigger notification refresh on initial load
+    setRefreshTrigger(prev => prev + 1);
   }, []);
 
   useEffect(() => {
@@ -158,7 +166,10 @@ const CitizenDashboard = () => {
   return (
     <div>
       <div className="dashboard-header-row">
-        <h2 className="dashboard-title">My Incidents</h2>
+        <div className="dashboard-title-section">
+          <h2 className="dashboard-title">My Incidents</h2>
+          <NotificationButton role="citizen" theme={{ accent: '#10B981' }} refreshTrigger={refreshTrigger} />
+        </div>
         <button className="Report-Incident-btn" onClick={() => setIsModalOpen(true)}>
           Report New Incident
         </button>
@@ -175,6 +186,8 @@ const CitizenDashboard = () => {
         onClose={() => setIsModalOpen(false)}
         onCreated={() => {
           loadIncidents(1);
+          // Trigger notification refresh when new incident is created
+          setRefreshTrigger(prev => prev + 1);
         }}
       />
       <EditIncidentModal
@@ -184,6 +197,8 @@ const CitizenDashboard = () => {
           onUpdated={() => {
             // refresh current page after update
             loadIncidents(pagination.currentPage);
+            // Trigger notification refresh when incident is updated
+            setRefreshTrigger(prev => prev + 1);
           }}
         />
 

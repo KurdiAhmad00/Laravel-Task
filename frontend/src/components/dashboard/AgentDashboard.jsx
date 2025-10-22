@@ -3,6 +3,7 @@ import { incidentAPI } from '../../services/api';
 import ViewIncidentModal from '../modals/ViewIncidentModal';
 import StatusUpdateModal from '../modals/StatusUpdateModal';
 import NotesModal from '../modals/NotesModal';
+import NotificationButton from '../NotificationButton';
 import './AgentDashboard.css';
 
 const formatDate = (iso) => new Date(iso).toLocaleDateString();
@@ -91,6 +92,9 @@ const AgentDashboard = () => {
   // All incidents data (unfiltered)
   const [allIncidents, setAllIncidents] = useState([]);
   
+  // Notification refresh trigger
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  
   // Prevent duplicate API calls with ref
   const hasLoadedRef = useRef(false);
   
@@ -153,6 +157,8 @@ const AgentDashboard = () => {
     
     hasLoadedRef.current = true;
     loadIncidents(1);
+    // Trigger notification refresh on initial load
+    setRefreshTrigger(prev => prev + 1);
   }, []);
 
   // Apply filters when allIncidents or filters change
@@ -186,6 +192,8 @@ const AgentDashboard = () => {
   const handleIncidentUpdated = () => {
     // Refresh the incidents list after any update
     loadIncidents(pagination.currentPage);
+    // Trigger notification refresh when incident is updated
+    setRefreshTrigger(prev => prev + 1);
   };
 
   const handleFilterChange = (filterType, value) => {
@@ -246,7 +254,10 @@ const AgentDashboard = () => {
   return (
     <div className="agent-dashboard">
       <div className="dashboard-header-row">
-        <h2 className="dashboard-title">My Assigned Incidents</h2>
+        <div className="dashboard-title-section">
+          <h2 className="dashboard-title">My Assigned Incidents</h2>
+          <NotificationButton role="agent" theme={{ accent: '#F59E0B' }} refreshTrigger={refreshTrigger} />
+        </div>
         <div className="incident-count">
           {incidents.length} incident{incidents.length !== 1 ? 's' : ''} assigned
         </div>
@@ -324,23 +335,23 @@ const AgentDashboard = () => {
                   <td>{incident.citizen?.name || incident.citizen?.email || '—'}</td>
                   <td>{formatDate(incident.created_at)}</td>
                   <td>
-                    <div className="action-buttons">
+                    <div className="agent-action-buttons">
                       <button 
-                        className="action-btn view-btn"
+                        className="agent-action-btn view-btn"
                         onClick={() => handleView(incident.id)}
                         title="View Details"
                       >
                         👁️
                       </button>
                       <button 
-                        className="action-btn status-btn"
+                        className="agent-action-btn status-btn"
                         onClick={() => handleStatusUpdate(incident.id)}
                         title="Update Status"
                       >
                         🔄
                       </button>
                       <button 
-                        className="action-btn notes-btn"
+                        className="agent-action-btn notes-btn"
                         onClick={() => handleAddNote(incident.id)}
                         title="Add Note"
                       >

@@ -119,4 +119,13 @@ export const importCSVAPI = {
   // getImportResults: () => api.get('/incidents/import-csv/results'),
 };
 
+// Notification API calls
+export const notificationAPI = {
+  getNotifications: () => api.get('/notifications'),
+  getUnreadNotifications: () => api.get('/notifications/unread-count'),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/read-all'),
+  clearAll: () => api.delete('/notifications/clear-all'),
+  clearRead: () => api.delete('/notifications/clear-read'),
+};
 export default api;

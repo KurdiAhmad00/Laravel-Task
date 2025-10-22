@@ -181,12 +181,12 @@
 }
 
 /* Action Buttons */
-.action-buttons {
+.agent-action-buttons {
   display: flex;
   gap: 8px;
 }
 
-.action-btn {
+.agent-action-btn {
   width: 32px;
   height: 32px;
   border: none;
@@ -199,30 +199,30 @@
   transition: all 0.2s ease;
 }
 
-.view-btn {
+.agent-action-btn-view-btn {
   background: #EFF6FF;
   color: #3B82F6;
 }
 
-.view-btn:hover {
+.agent-action-btn-view-btn:hover {
   background: #DBEAFE;
 }
 
-.status-btn {
+.agent-action-btn-status-btn {
   background: #FEF3C7;
   color: #F59E0B;
 }
 
-.status-btn:hover {
+.agent-action-btn-status-btn:hover {
   background: #FDE68A;
 }
 
-.notes-btn {
+.agent-action-btn-notes-btn {
   background: #F0FDF4;
   color: #10B981;
 }
 
-.notes-btn:hover {
+.agent-action-btn-notes-btn:hover {
   background: #DCFCE7;
 }
 

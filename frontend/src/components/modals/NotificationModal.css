@@ -1,0 +1,130 @@
+.notification-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .notification-modal {
+    background: white;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .notification-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .notification-header h3 {
+    margin: 0;
+    color: #333;
+  }
+  
+  .notification-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .mark-all-read-btn, .clear-all-btn {
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .mark-all-read-btn:hover {
+    background: #f0f8ff;
+    border-color: #007bff;
+  }
+  
+  .clear-all-btn:hover {
+    background: #fff5f5;
+    border-color: #dc3545;
+  }
+  
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+  }
+  
+  .notification-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+  }
+  
+  .notification-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    position: relative;
+  }
+  
+  .notification-item:hover {
+    background: #f8f9fa;
+  }
+  
+  .notification-item.unread {
+    background: #f0f8ff;
+    border-left: 4px solid #007bff;
+  }
+  
+  .notification-content h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+    font-size: 14px;
+  }
+  
+  .notification-content p {
+    margin: 0 0 5px 0;
+    color: #666;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  
+  .notification-date {
+    font-size: 11px;
+    color: #999;
+  }
+  
+  .unread-indicator {
+    width: 8px;
+    height: 8px;
+    background: #007bff;
+    border-radius: 50%;
+    margin-left: 10px;
+    flex-shrink: 0;
+  }
+  
+  .loading, .no-notifications {
+    padding: 40px 20px;
+    text-align: center;
+    color: #666;
+  }
+  
+  .no-notifications {
+    font-style: italic;
+  }
