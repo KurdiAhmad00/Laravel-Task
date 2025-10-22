@@ -17,8 +17,8 @@ class ProcessCsvImport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 300; // 5 minutes
-    public $tries = 2;
+    public $timeout = 1800; // 30 minutes for large files
+    public $tries = 3;
 
     protected $filePath;
     protected $operatorId;
@@ -85,33 +85,66 @@ class ProcessCsvImport implements ShouldQueue
             throw new \Exception("CSV file not found: {$this->filePath}");
         }
 
-        $file = Storage::get($this->filePath);
-        $lines = explode("\n", $file);
-        $header = str_getcsv(array_shift($lines)); // Remove header
+        // Use streaming instead of loading entire file into memory
+        $handle = fopen(Storage::path($this->filePath), 'r');
+        
+        if (!$handle) {
+            throw new \Exception("Could not open CSV file for reading");
+        }
 
-        foreach ($lines as $lineNumber => $line) {
-            if (empty(trim($line))) continue;
-
+        // Skip header row
+        fgetcsv($handle);
+        
+        $rowNumber = 1; 
+        
+        while (($row = fgetcsv($handle)) !== false) {
+            $rowNumber++;
             $results['total']++;
-            $row = str_getcsv($line);
+            
+            // Update every 100 rows
+            if ($results['total'] % 100 === 0) {
+                $this->updateProgress($results);
+            }
 
             try {
-                $this->processCsvRow($row, $lineNumber + 2);
+                $this->processCsvRow($row, $rowNumber);
                 $results['success']++;
             } catch (\Exception $e) {
                 $results['errors']++;
                 $results['error_details'][] = [
-                    'row' => $lineNumber + 2,
+                    'row' => $rowNumber,
                     'error' => $e->getMessage(),
                     'data' => $row
                 ];
             }
         }
 
+        fclose($handle);
+        
+        // Final progress update
+        $this->updateProgress($results);
+
         // Clean up the uploaded file
         Storage::delete($this->filePath);
 
         return $results;
+    }
+
+    /**
+     * Update progress in cache for frontend to track
+     */
+    private function updateProgress(array $results): void
+    {
+        $progress = [
+            'import_id' => $this->importId,
+            'status' => 'processing',
+            'processed' => $results['total'],
+            'success' => $results['success'],
+            'errors' => $results['errors'],
+            'updated_at' => now()->toISOString()
+        ];
+        
+        cache()->put("csv_import_progress_{$this->importId}", $progress, 3600);
     }
 
     /**

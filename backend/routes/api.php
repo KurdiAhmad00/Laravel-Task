@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\IncidentController;
 use App\Http\Controllers\Api\AdminController;
+use App\Http\Controllers\Api\NotificationController;
 
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -15,6 +16,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('categories', [IncidentController::class, 'getCategories']);
     Route::get('/incidents/{incident}', [IncidentController::class, 'show']);
     Route::get('/attachments/{attachment}/download', [IncidentController::class, 'downloadAttachment']);
+    
+    // Notification routes (available to all authenticated users)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::delete('/notifications/clear-all', [NotificationController::class, 'clearAll']);
+    Route::delete('/notifications/clear-read', [NotificationController::class, 'clearRead']);
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);
@@ -44,6 +53,7 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // CSV import for operators
         Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv'])->middleware('throttle:csv-import');
+        Route::get('/imports/progress/{importId}', [IncidentController::class, 'getImportProgress']);
     });
     
     // Agent routes 
@@ -77,4 +87,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/rate-limits/{id}/reset', [AdminController::class, 'resetRateLimit']);
 
     });
+    
 });

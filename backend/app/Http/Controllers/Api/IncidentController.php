@@ -628,7 +628,7 @@ class IncidentController extends Controller
     {
         // Validate the uploaded file
         $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:10240' 
+            'csv_file' => 'required|file|mimes:csv,txt|max:102400' // 100MB for large files
         ]);
 
         $file = $request->file('csv_file');
@@ -644,6 +644,34 @@ class IncidentController extends Controller
             'import_id' => $importId,
             'status' => 'processing'
         ], 202); // 202 Accepted - indicates request is being processed asynchronously
+    }
+
+    /**
+     * Get CSV import progress
+     */
+    public function getImportProgress($importId)
+    {
+        $progress = cache()->get("csv_import_progress_{$importId}");
+        $results = cache()->get("csv_import_results_{$importId}");
+        
+        if ($results) {
+            // Import completed
+            return response()->json([
+                'import_id' => $importId,
+                'status' => 'completed',
+                'results' => $results
+            ]);
+        } elseif ($progress) {
+            // Import in progress
+            return response()->json($progress);
+        } else {
+            // Import not found or expired
+            return response()->json([
+                'import_id' => $importId,
+                'status' => 'not_found',
+                'message' => 'Import not found or has expired'
+            ], 404);
+        }
     }
 
     /**
