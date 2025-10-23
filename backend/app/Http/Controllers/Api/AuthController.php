@@ -60,8 +60,14 @@ class AuthController extends Controller
 
         $user ->update(['last_login_at' =>now()]);
 
-        $token = $user->createToken('api-token')->plainTextToken;
+        // Delete all existing tokens to ensure fresh token
+        $user->tokens()->delete();
+        
+        $token = $user->createToken('api-token-' . time())->plainTextToken;
 
+        // Debug: Log the actual token being returned
+        \Log::info('Login token generated: ' . $token);
+        
         return response()->json([
             'message' => 'Login successful',
             'user' =>[
@@ -72,6 +78,7 @@ class AuthController extends Controller
                 'status' => $user->status,
             ],
             'token' => $token,
+            'debug_token_id' => explode('|', $token)[0], // Add debug info
         ], 200);
     }
     public function logout(Request $request)

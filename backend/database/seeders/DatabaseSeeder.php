@@ -26,5 +26,8 @@ class DatabaseSeeder extends Seeder
         
         // Create rate limits
         $this->call(\Database\Seeders\RateLimitSeeder::class);
+        
+        // Create sample incidents with relationships
+        $this->call(\Database\Seeders\IncidentSeeder::class);
     }
 }

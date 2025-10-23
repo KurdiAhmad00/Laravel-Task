@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 import UserManagement from './admin/UserManagement';
@@ -19,11 +19,56 @@ const AdminDashboard = () => {
   };
   
   const [activeTab, setActiveTab] = useState(getActiveTabFromUrl());
+  
+  // Shared data state
+  const [users, setUsers] = useState([]);
+  const [incidents, setIncidents] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [rateLimits, setRateLimits] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  // Ref to prevent duplicate API calls in StrictMode
+  const hasLoadedRef = useRef(false);
+
+  // Load data once on component mount
+  useEffect(() => {
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      loadSharedData();
+    }
+  }, []);
 
   // Update active tab when URL changes
   useEffect(() => {
     setActiveTab(getActiveTabFromUrl());
   }, [location.search]);
+
+  const loadSharedData = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [usersResponse, incidentsResponse, categoriesResponse, rateLimitsResponse, auditLogsResponse] = await Promise.all([
+        adminAPI.getUsers(),
+        adminAPI.getAllIncidents(),
+        adminAPI.getCategories(),
+        adminAPI.getRateLimits(),
+        adminAPI.getAuditLogs(1, {}) // Load first page with no filters
+      ]);
+      
+      setUsers(usersResponse.data?.users || []);
+      setIncidents(incidentsResponse.data?.incidents || []);
+      setCategories(categoriesResponse.data || []);
+      setRateLimits(rateLimitsResponse.data || []);
+      setAuditLogs(auditLogsResponse.data?.audit_logs || []);
+    } catch (e) {
+      setError('Failed to load system data');
+      console.error('Error loading shared data:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
@@ -42,17 +87,17 @@ const AdminDashboard = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <OverviewTab />;
+        return <OverviewTab users={users} incidents={incidents} loading={loading} error={error} onRefresh={loadSharedData} />;
       case 'users':
-        return <UserManagement />;
+        return <UserManagement users={users} onUsersUpdate={loadSharedData} />;
       case 'stats':
-        return <SystemStats />;
+        return <SystemStats users={users} incidents={incidents} onRefresh={loadSharedData} />;
       case 'config':
-        return <Configuration />;
+        return <Configuration categories={categories} rateLimits={rateLimits} onDataUpdate={loadSharedData} />;
       case 'audit':
-        return <AuditLogs />;
+        return <AuditLogs initialAuditLogs={auditLogs} onDataUpdate={loadSharedData} />;
       default:
-        return <OverviewTab />;
+        return <OverviewTab users={users} incidents={incidents} loading={loading} error={error} onRefresh={loadSharedData} />;
     }
   };
 
@@ -84,36 +129,10 @@ const AdminDashboard = () => {
 };
 
 // Overview Tab Component
-const OverviewTab = () => {
-  const [systemStats, setSystemStats] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    loadSystemStats();
-  }, []);
-
-  const loadSystemStats = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      // Load basic system statistics
-      const [usersResponse, incidentsResponse] = await Promise.all([
-        adminAPI.getUsers(),
-        adminAPI.getAllIncidents()
-      ]);
-      
-      setSystemStats({
-        totalUsers: usersResponse.data?.users?.length || 0,
-        totalIncidents: incidentsResponse.data?.incidents?.length || 0,
-        // Add more stats as needed
-      });
-    } catch (e) {
-      setError('Failed to load system statistics');
-      console.error('Error loading system stats:', e);
-    } finally {
-      setLoading(false);
-    }
+const OverviewTab = ({ users, incidents, loading, error, onRefresh }) => {
+  const systemStats = {
+    totalUsers: users?.length || 0,
+    totalIncidents: incidents?.length || 0,
   };
 
   if (loading) {
@@ -129,7 +148,7 @@ const OverviewTab = () => {
     return (
       <div className="overview-error">
         <p>{error}</p>
-        <button onClick={loadSystemStats} className="retry-btn">
+        <button onClick={onRefresh} className="retry-btn">
           Try Again
         </button>
       </div>

@@ -1,89 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { adminAPI } from '../../../services/api';
+import React from 'react';
 import './SystemStats.css';
 
-const SystemStats = () => {
-  const [stats, setStats] = useState({
-    users: { total: 0, byRole: {} },
-    incidents: { total: 0, byStatus: {} },
+const SystemStats = ({ users = [], incidents = [], onRefresh }) => {
+  // Calculate user statistics
+  const userStats = {
+    total: users.length,
+    byRole: users.reduce((acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    }, {})
+  };
+  
+  // Calculate incident statistics
+  const incidentStats = {
+    total: incidents.length,
+    byStatus: incidents.reduce((acc, incident) => {
+      acc[incident.status] = (acc[incident.status] || 0) + 1;
+      return acc;
+    }, {})
+  };
+  
+  const stats = {
+    users: userStats,
+    incidents: incidentStats,
     performance: { uptime: '99.9%', responseTime: '120ms' },
     storage: { used: '2.3GB', total: '10GB' }
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    loadSystemStats();
-  }, []);
-
-  const loadSystemStats = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const [usersResponse, incidentsResponse] = await Promise.all([
-        adminAPI.getUsers(),
-        adminAPI.getAllIncidents()
-      ]);
-      
-      const users = usersResponse.data?.users || [];
-      const incidents = incidentsResponse.data?.incidents || [];
-      
-      // Calculate user statistics
-      const userStats = {
-        total: users.length,
-        byRole: users.reduce((acc, user) => {
-          acc[user.role] = (acc[user.role] || 0) + 1;
-          return acc;
-        }, {})
-      };
-      
-      // Calculate incident statistics
-      const incidentStats = {
-        total: incidents.length,
-        byStatus: incidents.reduce((acc, incident) => {
-          acc[incident.status] = (acc[incident.status] || 0) + 1;
-          return acc;
-        }, {})
-      };
-      
-      setStats({
-        users: userStats,
-        incidents: incidentStats
-      });
-    } catch (e) {
-      console.error('Error loading system stats:', e);
-      console.error('Error response:', e.response?.data);
-      setError(`Failed to load system statistics: ${e.response?.data?.message || e.message}`);
-    } finally {
-      setLoading(false);
-    }
   };
 
-  if (loading) {
-    return (
-      <div className="system-stats-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading system statistics...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="system-stats-error">
-        <p>{error}</p>
-        <button onClick={loadSystemStats} className="retry-btn">
-          Try Again
-        </button>
-      </div>
-    );
-  }
+  // No loading/error states needed since data comes from parent
 
   return (
     <div className="system-stats">
       <div className="stats-header">
         <h2>System Statistics</h2>
-        <button onClick={loadSystemStats} className="refresh-btn">
+        <button onClick={onRefresh} className="refresh-btn">
           <span className="btn-icon">🔄</span>
           Refresh
         </button>

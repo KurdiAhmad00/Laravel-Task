@@ -3,38 +3,20 @@ import { adminAPI } from '../../../services/api';
 import DeleteUserModal from './DeleteUserModal';
 import './UserManagement.css';
 
-const UserManagement = () => {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
+const UserManagement = ({ users = [], onUsersUpdate }) => {
   const [error, setError] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
-    loadUsers();
     // Get current user from localStorage
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       setCurrentUser(JSON.parse(savedUser));
     }
   }, []);
-
-  const loadUsers = async () => {
-    setLoading(true);
-    setError('');
-    try {
-      const { data } = await adminAPI.getUsers();
-      setUsers(data.users || []);
-    } catch (e) {
-      setError('Failed to load users');
-      console.error('Error loading users:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRoleChange = async (userId, newRole) => {
     // Check if trying to change own role
@@ -51,7 +33,7 @@ const UserManagement = () => {
     
     try {
       await adminAPI.updateUserRole(userId, newRole);
-      await loadUsers(); // Reload users
+      onUsersUpdate(); // Reload users from parent
       setError(''); // Clear any previous errors
     } catch (e) {
       const errorMessage = e.response?.data?.message || 'Failed to update user role';
@@ -102,7 +84,7 @@ const UserManagement = () => {
     setDeleteLoading(true);
     try {
       await adminAPI.deleteUser(userId);
-      await loadUsers();
+      onUsersUpdate(); // Reload users from parent
       setError('');
       setShowDeleteModal(false);
       setUserToDelete(null);
@@ -131,7 +113,7 @@ const UserManagement = () => {
     setDeleteLoading(true);
     try {
       await adminAPI.deleteUserWithCascade(userId);
-      await loadUsers();
+      onUsersUpdate(); // Reload users from parent
       setError('');
       setShowDeleteModal(false);
       setUserToDelete(null);
@@ -148,34 +130,20 @@ const UserManagement = () => {
     handleDeleteUser(userId);
   };
 
-  if (loading) {
-    return (
-      <div className="user-management-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading users...</p>
-      </div>
-    );
-  }
+  // No loading state needed since data comes from parent
 
   return (
     <div className="user-management">
       <div className="user-management-header">
         <h2>User Management</h2>
-        <button 
-          className="create-user-btn"
-          onClick={() => setShowCreateModal(true)}
-        >
-          <span className="btn-icon">➕</span>
-          Create User
-        </button>
       </div>
 
       {error && (
         <div className="error-message">
           <p>{error}</p>
-          <button onClick={loadUsers} className="retry-btn">
-            Try Again
-          </button>
+        <button onClick={onUsersUpdate} className="retry-btn">
+          Try Again
+        </button>
         </div>
       )}
 
@@ -250,7 +218,7 @@ const UserManagement = () => {
         </table>
       </div>
 
-      {users.length === 0 && !loading && (
+      {users.length === 0 && (
         <div className="no-users">
           <p>No users found</p>
         </div>

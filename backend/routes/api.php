@@ -8,8 +8,8 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\NotificationController;
 
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/register', [AuthController::class, 'register'])->middleware('idempotency');
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -27,13 +27,13 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Citizen routes
     Route::middleware('role:citizen')->group(function () {
         Route::get('/my-incidents', [IncidentController::class, 'myIncidents']);
-        Route::post('/incidents', [IncidentController::class, 'store'])->middleware('throttle:incident-creation');
-        Route::put('/incidents/{incident}', [IncidentController::class, 'update']);
+        Route::post('/incidents', [IncidentController::class, 'store'])->middleware(['throttle:incident-creation', 'idempotency']);
+        Route::put('/incidents/{incident}', [IncidentController::class, 'update'])->middleware('idempotency');
         Route::delete('/incidents/{incident}', [IncidentController::class, 'destroy']);
         Route::delete('/my-incidents', [IncidentController::class, 'deleteAll']); 
         
         // File attachments
-        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment'])->middleware('throttle:file-upload');
+        Route::post('/incidents/{incident}/attachments', [IncidentController::class, 'uploadAttachment'])->middleware(['throttle:file-upload', 'idempotency']);
         Route::get('/incidents/{incident}/attachments', [IncidentController::class, 'getAttachments']);
         Route::delete('/attachments/{attachment}', [IncidentController::class, 'DeleteAttachment']);
     });
@@ -41,8 +41,8 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Operator routes
     Route::middleware('role:operator,admin')->group(function () {
         Route::get('/incidents', [IncidentController::class, 'index']);
-        Route::post('/incidents/{incident}/assign', [IncidentController::class, 'assign']);
-        Route::post('/incidents/{incident}/priority', [IncidentController::class, 'updatePriority']);
+        Route::post('/incidents/{incident}/assign', [IncidentController::class, 'assign'])->middleware('idempotency');
+        Route::post('/incidents/{incident}/priority', [IncidentController::class, 'updatePriority'])->middleware('idempotency');
         
         // Get agents for assignment
         Route::get('/agents', [AdminController::class, 'getAgents']);
@@ -52,25 +52,25 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::get('/audit-logs/{incident}', [AdminController::class, 'getIncidentAuditLogs']);
         
         // CSV import for operators
-        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv'])->middleware('throttle:csv-import');
+        Route::post('/incidents/import-csv', [IncidentController::class, 'importCsv'])->middleware(['throttle:csv-import', 'idempotency']);
         Route::get('/imports/progress/{importId}', [IncidentController::class, 'getImportProgress']);
     });
     
     // Agent routes 
     Route::middleware('role:agent,admin')->group(function () {
         Route::get('/assigned-incidents', [IncidentController::class, 'assignedIncidents']);
-        Route::post('/incidents/{incident}/status', [IncidentController::class, 'updateStatus']);
-        Route::post('/incidents/{incident}/notes', [IncidentController::class, 'addNote']);
+        Route::post('/incidents/{incident}/status', [IncidentController::class, 'updateStatus'])->middleware('idempotency');
+        Route::post('/incidents/{incident}/notes', [IncidentController::class, 'addNote'])->middleware('idempotency');
     });
     
     // Admin routes
     Route::middleware('role:admin')->group(function () {
         Route::get('/users', [AdminController::class, 'index']);
-        Route::put('/users/{user}/role', [AdminController::class, 'updateRole']);
+        Route::put('/users/{user}/role', [AdminController::class, 'updateRole'])->middleware('idempotency');
         Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
         Route::delete('/users/{user}/cascade', [AdminController::class, 'deleteUserWithCascade']);
         // Category management
-        Route::post('/categories', [AdminController::class, 'createCategory']);
+        Route::post('/categories', [AdminController::class, 'createCategory'])->middleware('idempotency');
         Route::put('/categories/{category}', [AdminController::class, 'updateCategory']);
         Route::delete('/categories/{category}', [AdminController::class, 'deleteCategory']);
 

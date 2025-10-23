@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { adminAPI } from '../../../services/api';
 import './Configuration.css';
 
-const Configuration = () => {
+const Configuration = ({ categories = [], rateLimits = [], onDataUpdate }) => {
   const [config, setConfig] = useState({
     rateLimits: {
       apiCalls: 1000,
@@ -32,36 +32,18 @@ const Configuration = () => {
   const [saved, setSaved] = useState(false);
   
   // Rate limits state
-  const [rateLimits, setRateLimits] = useState([]);
   const [rateLimitLoading, setRateLimitLoading] = useState(false);
   const [editingRateLimit, setEditingRateLimit] = useState(null);
   const [editingData, setEditingData] = useState({});
   const [rateLimitSaved, setRateLimitSaved] = useState(false);
   
   // Category management state
-  const [categories, setCategories] = useState([]);
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [editingCategory, setEditingCategory] = useState(null);
 
-  // Load categories and rate limits on component mount
-  useEffect(() => {
-    loadCategories();
-    loadRateLimits();
-  }, []);
 
-  const loadCategories = async () => {
-    setCategoryLoading(true);
-    try {
-      const { data } = await adminAPI.getCategories();
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-    } finally {
-      setCategoryLoading(false);
-    }
-  };
 
   const handleAddCategory = async () => {
     if (!newCategory.name.trim()) return;
@@ -71,7 +53,7 @@ const Configuration = () => {
       await adminAPI.createCategory(newCategory);
       setNewCategory({ name: '', description: '' });
       setShowAddCategory(false);
-      await loadCategories();
+      onDataUpdate(); 
     } catch (error) {
       console.error('Error adding category:', error);
     } finally {
@@ -84,7 +66,7 @@ const Configuration = () => {
     try {
       await adminAPI.updateCategory(categoryId, updatedData);
       setEditingCategory(null);
-      await loadCategories();
+      onDataUpdate(); 
     } catch (error) {
       console.error('Error updating category:', error);
     } finally {
@@ -98,7 +80,7 @@ const Configuration = () => {
     setCategoryLoading(true);
     try {
       await adminAPI.deleteCategory(categoryId);
-      await loadCategories();
+      onDataUpdate(); 
     } catch (error) {
       console.error('Error deleting category:', error);
     } finally {
@@ -106,27 +88,13 @@ const Configuration = () => {
     }
   };
 
-  // Rate limit management functions
-  const loadRateLimits = async () => {
-    setRateLimitLoading(true);
-    try {
-      const response = await adminAPI.getRateLimits();
-      setRateLimits(response.data || []);
-    } catch (error) {
-      console.error('Error loading rate limits:', error);
-      // Show error message to user
-      alert('Failed to load rate limits. Please check console for details.');
-    } finally {
-      setRateLimitLoading(false);
-    }
-  };
 
   const handleUpdateRateLimit = async (rateLimitId, updatedData) => {
     setRateLimitLoading(true);
     try {
       await adminAPI.updateRateLimit(rateLimitId, updatedData);
       setEditingRateLimit(null);
-      await loadRateLimits();
+      onDataUpdate(); 
     } catch (error) {
       console.error('Error updating rate limit:', error);
     } finally {
@@ -140,7 +108,7 @@ const Configuration = () => {
     setRateLimitLoading(true);
     try {
       await adminAPI.resetRateLimit(rateLimitId);
-      await loadRateLimits();
+      onDataUpdate(); 
     } catch (error) {
       console.error('Error resetting rate limit:', error);
     } finally {
@@ -174,7 +142,7 @@ const Configuration = () => {
       setEditingData({});
       setRateLimitSaved(true);
       setTimeout(() => setRateLimitSaved(false), 3000);
-      await loadRateLimits();
+      onDataUpdate(); 
     } catch (error) {
       console.error('Error updating rate limit:', error);
       alert('Failed to update rate limit. Please check console for details.');
@@ -256,7 +224,7 @@ const Configuration = () => {
               )}
               <button 
                 className="refresh-btn"
-                onClick={loadRateLimits}
+                onClick={onDataUpdate}
                 disabled={rateLimitLoading}
                 title="Refresh rate limits"
               >
@@ -272,7 +240,7 @@ const Configuration = () => {
                 <p>No rate limits found. Please check the console for errors.</p>
                 <button 
                   className="retry-btn"
-                  onClick={loadRateLimits}
+                  onClick={onDataUpdate}
                 >
                   Retry Loading
                 </button>

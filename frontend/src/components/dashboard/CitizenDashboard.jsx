@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { incidentAPI } from '../../services/api';
 import ReportIncidentModal from '../modals/ReportIncidentModal';
 import ViewIncidentModal from '../modals/ViewIncidentModal';
@@ -41,6 +41,8 @@ const CitizenDashboard = () => {
     total: 0,
     hasMorePages: false
   });
+  
+  const hasLoadedRef = useRef(false);
   
   const handleDeleteClick = (incidentId) => {
     const incident = incidents.find(i => i.id === incidentId);
@@ -150,6 +152,11 @@ const CitizenDashboard = () => {
   };
 
   useEffect(() => {
+    if (hasLoadedRef.current) {
+      return;
+    }
+    
+    hasLoadedRef.current = true;
     loadIncidents(1);
     // Trigger notification refresh on initial load
     setRefreshTrigger(prev => prev + 1);
@@ -195,7 +202,6 @@ const CitizenDashboard = () => {
           onClose={() => setEditModal({ visible: false, incidentId: null })}
           incidentId={editModal.incidentId}
           onUpdated={() => {
-            // refresh current page after update
             loadIncidents(pagination.currentPage);
             // Trigger notification refresh when incident is updated
             setRefreshTrigger(prev => prev + 1);
@@ -339,7 +345,7 @@ const CitizenDashboard = () => {
             onMouseEnter={(e) => e.target.style.background = '#F3F4F6'}
             onMouseLeave={(e) => e.target.style.background = 'none'}
           >
-            👁️ View
+            👁️ View Incident
           </button>
           <button
             onClick={() => handleEdit(contextMenu.incidentId)}

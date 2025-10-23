@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../../services/api';
 import './AuditLogs.css';
 
-const AuditLogs = () => {
-  const [auditLogs, setAuditLogs] = useState([]);
+const AuditLogs = ({ initialAuditLogs = [], onDataUpdate }) => {
+  const [auditLogs, setAuditLogs] = useState(initialAuditLogs);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -15,7 +15,13 @@ const AuditLogs = () => {
   });
 
   useEffect(() => {
-    loadAuditLogs();
+    setAuditLogs(initialAuditLogs);
+  }, [initialAuditLogs]);
+
+  useEffect(() => {
+    if (currentPage !== 1 || Object.values(filters).some(value => value !== '')) {
+      loadAuditLogs();
+    }
   }, [currentPage, filters]);
 
   const loadAuditLogs = async () => {
@@ -117,8 +123,18 @@ const AuditLogs = () => {
   return (
     <div className="audit-log-viewer">
       <div className="audit-header">
-        <h2>System Audit Logs</h2>
-        <p>Track all system activities and changes</p>
+        <div>
+          <h2>System Audit Logs</h2>
+          <p>Track all system activities and changes</p>
+        </div>
+        <button 
+          className="refresh-btn"
+          onClick={onDataUpdate}
+          disabled={loading}
+          title="Refresh audit logs"
+        >
+          {loading ? '⏳' : '🔄'} Refresh
+        </button>
       </div>
 
       {/* Filters */}
