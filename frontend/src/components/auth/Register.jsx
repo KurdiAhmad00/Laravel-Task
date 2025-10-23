@@ -51,7 +51,7 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
 
   return (
     <div 
-      className="auth-container"
+      className="register-container"
       style={{
         backgroundImage: 'url(/pictures/background.jpg)',
         backgroundSize: 'cover',
@@ -59,20 +59,20 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
         backgroundAttachment: 'fixed'
       }}
     >
-      <div className="auth-card">
-        <div className="auth-header">
+      <div className="register-card">
+        <div className="register-header">
           <h2>Create Account</h2>
           <p>Join the Incident Desk System</p>
         </div>
         
         {error && (
-          <div className="alert alert-danger" role="alert">
+          <div className="register-alert register-alert-danger" role="alert">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="register-form">
+          <div className="register-form-group">
             <label htmlFor="name">Full Name</label>
             <input
               type="text"
@@ -85,7 +85,7 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="register-form-group">
             <label htmlFor="email">Email</label>
             <input
               type="email"
@@ -98,7 +98,7 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="register-form-group">
             <label htmlFor="phone_number">Phone Number (Optional)</label>
             <input
               type="tel"
@@ -110,9 +110,9 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="register-form-group">
             <label htmlFor="password">Password</label>
-            <div className="password-input-container">
+            <div className="register-password-input-container">
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -125,7 +125,7 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="register-password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? '👁️' : '👁️‍🗨️'}
@@ -133,9 +133,9 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="register-form-group">
             <label htmlFor="password_confirmation">Confirm Password</label>
-            <div className="password-input-container">
+            <div className="register-password-input-container">
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 id="password_confirmation"
@@ -147,7 +147,7 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="register-password-toggle"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
@@ -157,19 +157,19 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
 
           <button
             type="submit"
-            className="auth-button"
+            className="register-button"
             disabled={loading}
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <div className="register-footer">
           <p>
             Already have an account?{' '}
             <button
               type="button"
-              className="auth-link"
+              className="register-link"
               onClick={() => navigate('/login')}
             >
               Sign in here

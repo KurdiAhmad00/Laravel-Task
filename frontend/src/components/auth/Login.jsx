@@ -45,7 +45,7 @@ const Login = ({ onLogin, onSwitchToRegister, initialEmail = '' }) => {
 
   return (
     <div 
-      className="auth-container"
+      className="login-container"
       style={{
         backgroundImage: 'url(/pictures/background.jpg)',
         backgroundSize: 'cover',
@@ -53,20 +53,20 @@ const Login = ({ onLogin, onSwitchToRegister, initialEmail = '' }) => {
         backgroundAttachment: 'fixed'
       }}
     >
-      <div className="auth-card">
-        <div className="auth-header">
+      <div className="login-card">
+        <div className="login-header">
           <h2>Welcome Back</h2>
           <p>Sign in to your account</p>
         </div>
         
         {error && (
-          <div className="alert alert-danger" role="alert">
+          <div className="login-alert login-alert-danger" role="alert">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="login-form">
+          <div className="login-form-group">
             <label htmlFor="email">Email</label>
             <input
               type="email"
@@ -79,9 +79,9 @@ const Login = ({ onLogin, onSwitchToRegister, initialEmail = '' }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="login-form-group">
             <label htmlFor="password">Password</label>
-            <div className="password-input-container">
+            <div className="login-password-input-container">
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -93,7 +93,7 @@ const Login = ({ onLogin, onSwitchToRegister, initialEmail = '' }) => {
               />
               <button
                 type="button"
-                className="password-toggle"
+                className="login-password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? '👁️' : '👁️‍🗨️'}
@@ -103,19 +103,19 @@ const Login = ({ onLogin, onSwitchToRegister, initialEmail = '' }) => {
 
           <button
             type="submit"
-            className="auth-button"
+            className="login-button"
             disabled={loading}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        <div className="auth-footer">
+        <div className="login-footer">
           <p>
             Don't have an account?{' '}
             <button
               type="button"
-              className="auth-link"
+              className="login-link"
               onClick={() => navigate('/register')}
             >
               Sign up here

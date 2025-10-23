@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from '../components/auth/Login';
-import Register from '../components/auth/Register';
+import Login from '../components/auth/Login.jsx';
+import Register from '../components/auth/Register.jsx';
 import PrivateRoute from './PrivateRoute';
 import RoleDashboard from '../components/dashboard';
 
