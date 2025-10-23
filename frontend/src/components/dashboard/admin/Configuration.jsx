@@ -214,7 +214,7 @@ const Configuration = ({ categories = [], rateLimits = [], onDataUpdate }) => {
         {/* Rate Limits */}
         <div className="config-section">
           <div className="config-section-header">
-            <h3>🚦 Rate Limits</h3>
+            <h3>Rate Limits</h3>
             <div className="header-actions">
               {rateLimitSaved && (
                 <div className="save-success">
@@ -390,7 +390,7 @@ const Configuration = ({ categories = [], rateLimits = [], onDataUpdate }) => {
         </div>
 
         {/* <div className="config-section">
-          <h3>🔔 Notifications</h3>
+          <h3>Notifications</h3>
           <div className="config-grid">
             <div className="config-item checkbox">
               <label>
@@ -436,7 +436,7 @@ const Configuration = ({ categories = [], rateLimits = [], onDataUpdate }) => {
         </div>
 
         <div className="config-section">
-          <h3>🔒 Security</h3>
+          <h3>Security</h3>
           <div className="config-grid">
             <div className="config-item">
               <label>Minimum Password Length</label>
@@ -521,7 +521,7 @@ const Configuration = ({ categories = [], rateLimits = [], onDataUpdate }) => {
 
         {/* Category Management */}
         <div className="config-section">
-          <h3>📂 Incident Categories</h3>
+          <h3>Incident Categories</h3>
           <div className="category-management">
             <div className="category-header">
               <button 

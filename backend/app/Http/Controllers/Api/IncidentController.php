@@ -273,8 +273,15 @@ class IncidentController extends Controller
             ], 403);
         }
         
+        // Only allow deletion of incidents with "New" status
+        if ($incident->status !== 'New') {
+            return response()->json([
+                'message' => 'You can only delete incidents with "New" status'
+            ], 403);
+        }
+        
         try {
-            DB::transaction(function () use ($incident) {
+            DB::transaction(function () use ($incident, $user) {
 
                 foreach ($incident->attachments as $attachment) {
 
@@ -284,8 +291,12 @@ class IncidentController extends Controller
                     $attachment->delete();
                 }
                 
+                // Delete all audit logs related to this incident first
+                \App\Models\AuditLog::where('incident_id', $incident->id)->delete();
+                
+                // Create audit log for the deletion (with incident_id as null since we're deleting)
                 \App\Models\AuditLog::create([
-                    'incident_id' => $incident->id,
+                    'incident_id' => null, // Set to null since we're deleting the incident
                     'actor_id' => $user->id,
                     'action' => 'deleted',
                     'entity_type' => 'incident',

@@ -43,7 +43,7 @@ const SystemStats = ({ users = [], incidents = [], onRefresh }) => {
         {/* User Statistics */}
         <div className="stats-card">
           <div className="stats-card-header">
-            <h3>👥 User Statistics</h3>
+            <h3>User Statistics</h3>
             <div className="stats-total">{stats.users.total}</div>
           </div>
           <div className="stats-breakdown">
@@ -62,7 +62,7 @@ const SystemStats = ({ users = [], incidents = [], onRefresh }) => {
         {/* Incident Statistics */}
         <div className="stats-card">
           <div className="stats-card-header">
-            <h3>📋 Incident Statistics</h3>
+            <h3>Incident Statistics</h3>
             <div className="stats-total">{stats.incidents.total}</div>
           </div>
           <div className="stats-breakdown">

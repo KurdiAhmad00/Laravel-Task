@@ -46,6 +46,14 @@ const CitizenDashboard = () => {
   
   const handleDeleteClick = (incidentId) => {
     const incident = incidents.find(i => i.id === incidentId);
+    
+    // Check if incident can be deleted (only "New" status)
+    if (incident?.status !== 'New') {
+      setError('You can only delete incidents with "New" status');
+      setContextMenu({ visible: false, x: 0, y: 0, incidentId: null });
+      return;
+    }
+    
     setConfirmDelete({
       visible: true,
       incidentId: incidentId,
@@ -366,25 +374,26 @@ const CitizenDashboard = () => {
           </button>
           <button
             onClick={() => handleDeleteClick(contextMenu.incidentId)}
-            disabled={deletingId === contextMenu.incidentId}
+            disabled={deletingId === contextMenu.incidentId || incidents.find(i => i.id === contextMenu.incidentId)?.status !== 'New'}
             style={{
               width: '100%',
               padding: '8px 12px',
               border: 'none',
               background: 'none',
               textAlign: 'left',
-              cursor: deletingId === contextMenu.incidentId ? 'not-allowed' : 'pointer',
+              cursor: (deletingId === contextMenu.incidentId || incidents.find(i => i.id === contextMenu.incidentId)?.status !== 'New') ? 'not-allowed' : 'pointer',
               fontSize: '14px',
-              color: deletingId === contextMenu.incidentId ? '#9CA3AF' : '#DC2626',
+              color: (deletingId === contextMenu.incidentId || incidents.find(i => i.id === contextMenu.incidentId)?.status !== 'New') ? '#9CA3AF' : '#DC2626',
             }}
             onMouseEnter={(e) => {
-              if (deletingId !== contextMenu.incidentId) {
+              if (deletingId !== contextMenu.incidentId && incidents.find(i => i.id === contextMenu.incidentId)?.status === 'New') {
                 e.target.style.background = '#FEF2F2';
               }
             }}
             onMouseLeave={(e) => e.target.style.background = 'none'}
           >
-            {deletingId === contextMenu.incidentId ? '⏳ Deleting...' : '🗑️ Delete'}
+            {deletingId === contextMenu.incidentId ? '⏳ Deleting...' : 
+             incidents.find(i => i.id === contextMenu.incidentId)?.status !== 'New' ? '🗑️ Delete (Not Available)' : '🗑️ Delete'}
           </button>
         </div>
       )}

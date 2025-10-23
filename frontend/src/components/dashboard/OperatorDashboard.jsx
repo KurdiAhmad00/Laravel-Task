@@ -16,7 +16,7 @@ const StatusBadge = ({ status }) => {
       case 'new': return '#3B82F6';
       case 'in progress': return '#F59E0B';
       case 'resolved': return '#10B981';
-      case 'closed': return '#6B7280';
+      case 'Unresolved': return '#6B7280';
       default: return '#8B5CF6';
     }
   };
@@ -273,7 +273,7 @@ const OperatorDashboard = () => {
             <option value="New">New</option>
             <option value="In Progress">In Progress</option>
             <option value="Resolved">Resolved</option>
-            <option value="Closed">Closed</option>
+            <option value="Unresolved">Unresolved</option>
           </select>
         </div>
         

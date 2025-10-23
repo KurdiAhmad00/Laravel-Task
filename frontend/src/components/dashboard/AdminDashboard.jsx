@@ -71,11 +71,11 @@ const AdminDashboard = () => {
   };
 
   const tabs = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'users', label: 'User Management', icon: '👥' },
-    { id: 'stats', label: 'System Stats', icon: '📈' },
-    { id: 'config', label: 'Configuration', icon: '⚙️' },
-    { id: 'audit', label: 'Audit Logs', icon: '🔍' }
+    { id: 'overview', label: 'Overview' },
+    { id: 'users', label: 'User Management'},
+    { id: 'stats', label: 'System Stats'},
+    { id: 'config', label: 'Configuration' },
+    { id: 'audit', label: 'Audit Logs'}
   ];
 
   const handleTabChange = (tab) => {
