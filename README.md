@@ -1,172 +1,240 @@
 # Incident Desk System
 
-A Laravel + React incident management system for handling citizen reports. Citizens can report issues like broken streetlights or potholes, operators assign them to agents, and agents work on resolving them.
+A full-stack web application for managing citizen reports and incident tracking. Think of it like a digital helpdesk where people can report problems (like broken streetlights or potholes), and city workers can track and fix them.
 
-## What it does
+## How it works
 
-**Citizens** can report incidents and track their status
-**Operators** can see all incidents, assign them to agents, and import data from CSV files  
-**Agents** can see their assigned incidents and update the status
-**Admins** can manage users, view system stats, and configure settings
+- **Citizens** report problems and get updates on their status
+- **Operators** see all reports and assign them to field workers
+- **Agents** (field workers) handle assigned reports and update progress
+- **Admins** manage the system and users
 
-## Main features
+## Key Features
 
-- Report incidents with photos and location data
-- Assign incidents to specific agents
-- Real-time notifications when status changes
-- CSV import for bulk data
-- File attachments for evidence
-- Complete audit trail of all actions
-- Rate limiting to prevent abuse
-- Background job processing
-- User role management
+- **Report Issues**: Citizens can report problems with photos and location
+- **Smart Assignment**: Operators assign reports to the right field workers
+- **Real-time Updates**: Everyone gets notified when something changes
+- **File Management**: Upload photos and documents as evidence
+- **Bulk Import**: Operators can import lots of data from CSV files
+- **Security**: Rate limiting prevents spam and abuse
+- **Audit Trail**: Track who did what and when
+- **Admin Controls**: Manage users and system settings
 
-## Tech stack
+## What's Under the Hood
 
-**Backend**: Laravel 11 with PostgreSQL
-**Frontend**: React 18 with CSS modules
-**Auth**: Laravel Sanctum (JWT tokens)
-**Database**: PostgreSQL with migrations
-**File storage**: Laravel storage system
-**Background jobs**: Laravel queues
+- **Backend**: Laravel 11 (PHP framework)
+- **Frontend**: React 18 (JavaScript library)
+- **Database**: PostgreSQL (stores all the data)
+- **Authentication**: JWT tokens (secure login)
+- **File Storage**: Local storage system
+- **Background Jobs**: Queue system for heavy tasks
 
-## Setup
+## Getting Started
 
-You'll need PHP 8.2+, Node.js 18+, PostgreSQL, and Composer installed.
+**Prerequisites**: PHP 8.2+, Node.js 18+, PostgreSQL, and Composer
 
-### Backend setup
+### 1. Backend Setup
 ```bash
 cd backend
 composer install
 cp .env.example .env
 php artisan key:generate
-# Edit .env file with your database credentials
+# Edit .env file with your database details
 php artisan migrate
 php artisan db:seed
 php artisan serve
 ```
 
-### Frontend setup
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm start
 ```
 
-The app will be available at http://localhost:3000
+### 3. Access the App
+Open http://localhost:3000 in your browser
 
-## Test accounts
+**Note**: Make sure PostgreSQL is running and update the database credentials in the `.env` file!
 
-| Role | Email | Password |
-|------|-------|----------|
-| Citizen | citizen@test.com | password |
-| Operator | operator@test.com | password |
-| Agent | agent@test.com | password |
-| Admin | admin@test.com | password |
+## Try It Out
 
-## How to use
+Use these test accounts to explore different user roles:
 
-**Citizens**: Login and click "Report New Incident" to create reports. You can track status and get notifications when things change.
+| Role | Email | Password | What they can do |
+|------|-------|----------|------------------|
+| **Citizen** | citizen@test.com | password | Report issues, track status |
+| **Operator** | operator@test.com | password | Assign reports, import data |
+| **Agent** | agent@test.com | password | Handle assigned reports |
+| **Admin** | admin@test.com | password | Manage system and users |
 
-**Operators**: See all incidents, assign them to agents, set priorities, and import CSV files.
+## How Each Role Works
 
-**Agents**: View your assigned incidents, update status, and add progress notes.
+**👤 Citizens**: 
+- Report new incidents with photos and location
+- Track the status of their reports
+- Get notifications when things change
 
-**Admins**: Manage users, view system stats, configure rate limits, and see audit logs.
+**👥 Operators**: 
+- See all incidents in the system
+- Assign reports to field workers
+- Set priority levels
+- Import bulk data from CSV files
 
-## API
+**🔧 Agents**: 
+- View only their assigned incidents
+- Update status and add progress notes
+- Upload photos as proof of work
 
-All endpoints need a Bearer token. Login with POST /api/login to get one.
+**⚙️ Admins**: 
+- Manage all users and their roles
+- View system statistics
+- Configure rate limits
+- Monitor audit logs
 
-Main endpoints:
-- `GET /api/incidents` - List incidents (operators/admins)
-- `POST /api/incidents` - Create incident (citizens)
+## Project Structure
+
+```
+Laravel-Task/
+├── backend/                 # Laravel API
+│   ├── app/
+│   │   ├── Http/Controllers/    # API endpoints
+│   │   ├── Models/              # Database models
+│   │   ├── Jobs/                # Background jobs
+│   │   └── Services/            # Business logic
+│   ├── database/
+│   │   ├── migrations/          # Database schema
+│   │   └── seeders/             # Sample data
+│   └── routes/api.php           # API routes
+├── frontend/                # React app
+│   ├── src/
+│   │   ├── components/          # React components
+│   │   ├── services/            # API calls
+│   │   └── routes/              # App routing
+│   └── public/                  # Static files
+└── README.md
+```
+
+## API Endpoints
+
+All API calls need authentication. Login first to get a token.
+
+**Main endpoints:**
+- `POST /api/login` - Get authentication token
+- `GET /api/incidents` - List all incidents (operators/admins)
+- `POST /api/incidents` - Create new incident (citizens)
 - `GET /api/my-incidents` - Your incidents (citizens)
 - `POST /api/incidents/{id}/assign` - Assign incident (operators)
 - `POST /api/incidents/{id}/status` - Update status (agents)
 - `GET /api/notifications` - Get notifications
-- `GET /api/users` - List users (admins)
+- `GET /api/users` - List users (admins only)
 
-## Database
+## Database Schema
 
-Main tables: users, incidents, categories, attachments, incident_notes, audit_logs, notifications, rate_limits
+The system uses these main tables:
 
-Users create incidents, incidents belong to categories, agents get assigned incidents, and incidents can have attachments and notes.
+- **users** - All system users (citizens, operators, agents, admins)
+- **incidents** - Citizen reports with status and location
+- **categories** - Types of incidents (streetlight, pothole, etc.)
+- **attachments** - Photos and files uploaded with incidents
+- **incident_notes** - Progress updates and comments
+- **audit_logs** - Track all system changes
+- **notifications** - User notifications
+- **rate_limits** - Configurable API limits
 
-## 🔧 Configuration
+**How it all connects**: Users create incidents, incidents belong to categories, agents get assigned incidents, and incidents can have attachments and notes.
 
-### **Rate Limiting**
-The system includes configurable rate limiting:
+## System Features
+
+### Rate Limiting
+Prevents spam and abuse with these limits:
 - **Login**: 50 attempts per hour
-- **API**: 1000 requests per hour
+- **API**: 1000 requests per hour  
 - **Incident Creation**: 100 per hour
 - **File Upload**: 200 per hour
 - **CSV Import**: 20 per hour
 
-Admins can modify these limits through the admin dashboard.
+*Admins can adjust these limits through the dashboard.*
 
-### **Background Jobs**
-The system uses Laravel Queues for:
+### Background Jobs
+Heavy tasks run in the background:
 - Email notifications
-- CSV import processing
-- System cleanup tasks
+- CSV file processing
+- System cleanup
 - Report generation
 
-## 🧪 Testing
+*This keeps the app responsive even with large files.*
 
-### **Backend Tests**
+## Testing the System
+
+### Quick Test
+1. Use the test accounts above
+2. Try each user role to see different features
+3. Test file uploads and notifications
+4. Check that rate limiting works
+
+### Running Tests
 ```bash
-cd backend
-php artisan test
+# Backend tests
+cd backend && php artisan test
+
+# Frontend tests  
+cd frontend && npm test
 ```
 
-### **Frontend Tests**
-```bash
-cd frontend
-npm test
-```
+### What to Test
+- ✅ All user roles work correctly
+- ✅ File uploads and downloads
+- ✅ Notifications appear when expected
+- ✅ CSV import functionality
+- ✅ Rate limiting prevents abuse
+- ✅ Admin controls work properly
 
-### **Manual Testing**
-1. Use the provided test users
-2. Test all user roles and permissions
-3. Verify notification system
-4. Test file uploads and CSV imports
-5. Check rate limiting functionality
+## Going Live (Production)
 
-## 🚀 Deployment
+### What You Need
+- A web server (Apache/Nginx)
+- PostgreSQL database
+- PHP 8.2+ and Node.js 18+
+- SSL certificate for security
 
-### **Production Setup**
-1. **Environment**: Set `APP_ENV=production` in `.env`
-2. **Database**: Use production PostgreSQL instance
-3. **Storage**: Configure cloud storage for file uploads
-4. **Queue**: Set up Redis or database queue driver
-5. **Web Server**: Configure Apache/Nginx for Laravel
-6. **Frontend**: Build and serve static files
-
-### **Environment Variables**
+### Key Settings
 ```env
 APP_ENV=production
 APP_DEBUG=false
 DB_CONNECTION=pgsql
-DB_HOST=your-db-host
+DB_HOST=your-database-server
 DB_DATABASE=incident_desk
 DB_USERNAME=your-username
 DB_PASSWORD=your-password
-QUEUE_CONNECTION=database
 ```
 
-## 🎯 Project Status
+### Steps
+1. Set up your production database
+2. Update the `.env` file with production settings
+3. Run migrations and seeders
+4. Build the frontend: `npm run build`
+5. Configure your web server
+6. Set up file storage for uploads
 
-- ✅ **Core Functionality**: Complete
-- ✅ **User Management**: Complete
-- ✅ **Notification System**: Complete
-- ✅ **File Handling**: Complete
-- ✅ **Admin Features**: Complete
-- ✅ **Rate Limiting**: Complete
-- ✅ **Background Jobs**: Complete
-- ✅ **Frontend Interface**: Complete
-- ⚠️ **Idempotency**: Pending (for production use)
+## What's Complete ✅
+
+- **User Management**: All roles work perfectly
+- **Incident System**: Full CRUD operations
+- **Notifications**: Real-time updates
+- **File Handling**: Upload and download
+- **Admin Dashboard**: Complete management tools
+- **Security**: Rate limiting and authentication
+- **Background Jobs**: Heavy tasks run smoothly
+- **Frontend**: Clean, responsive interface
+
+## What's Next 🔄
+
+- **Idempotency**: For production-grade API reliability
+- **Email Notifications**: Configure SMTP for real emails
+- **Cloud Storage**: Move file storage to AWS/S3
+- **Monitoring**: Add logging and error tracking
 
 ---
 
-**Built using Laravel and React**
+*Built with Laravel 11 and React 18*
