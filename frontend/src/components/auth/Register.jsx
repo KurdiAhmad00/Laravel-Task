@@ -50,17 +50,20 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
   };
 
   return (
-    <div 
-      className="register-container"
-      style={{
-        backgroundImage: 'url(/pictures/background.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      }}
-    >
+    <div className="register-container">
       <div className="register-card">
         <div className="register-header">
+          <div className="register-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4C18.2 4 20 5.8 20 8C20 10.2 18.2 12 16 12C13.8 12 12 10.2 12 8C12 5.8 13.8 4 16 4ZM16 14C20.4 14 24 17.6 24 22H8C8 17.6 11.6 14 16 14ZM8 4C10.2 4 12 5.8 12 8C12 10.2 10.2 12 8 12C5.8 12 4 10.2 4 8C4 5.8 5.8 4 8 4ZM8 14C12.4 14 16 17.6 16 22H0C0 17.6 3.6 14 8 14Z" fill="url(#gradient)"/>
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#667eea"/>
+                  <stop offset="100%" stopColor="#764ba2"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
           <h2>Create Account</h2>
           <p>Join the Incident Desk System</p>
         </div>
@@ -160,7 +163,19 @@ const Register = ({ onRegistered, onSwitchToLogin }) => {
             className="register-button"
             disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? (
+              <>
+                <div className="register-spinner"></div>
+                Creating Account...
+              </>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H5V21H19V9Z" fill="currentColor"/>
+                </svg>
+                Create Account
+              </>
+            )}
           </button>
         </form>
 
